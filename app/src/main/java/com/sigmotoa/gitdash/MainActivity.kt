@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,12 +23,14 @@ import com.sigmotoa.gitdash.data.remote.RetrofitInstance
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
 import com.sigmotoa.gitdash.ui.screen.RepositoryListScreen
+import com.sigmotoa.gitdash.ui.screen.StatsScreen
 import com.sigmotoa.gitdash.ui.theme.GitDashTheme
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     data object Profile : Screen("profile", "Profile", Icons.Filled.AccountCircle)
     data object Repos : Screen("repos", "Repositories", Icons.AutoMirrored.Filled.List)
+    data object Stats : Screen("stats", "Stats", Icons.Filled.BarChart)
 }
 
 class MainActivity : ComponentActivity() {
@@ -49,7 +52,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GitDashApp(viewModel: GitHubViewModel) {
     val navController = rememberNavController()
-    val items = listOf(Screen.Profile, Screen.Repos)
+    val items = listOf(Screen.Profile, Screen.Repos, Screen.Stats)
 
     Scaffold(
         bottomBar = {
@@ -86,6 +89,9 @@ fun GitDashApp(viewModel: GitHubViewModel) {
             }
             composable(Screen.Repos.route) {
                 RepositoryListScreen(viewModel = viewModel)
+            }
+            composable(Screen.Stats.route) {
+                StatsScreen(viewModel = viewModel)
             }
         }
     }

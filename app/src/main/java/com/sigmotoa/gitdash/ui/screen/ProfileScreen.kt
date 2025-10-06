@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
+import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +26,6 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -41,14 +42,13 @@ fun ProfileScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
         ) {
-            // Search Section
-            SearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                onSearch = { viewModel.loadUser(searchQuery) },
-                enabled = searchQuery.isNotBlank()
+            // Shared Search Section
+            GitHubSearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = { viewModel.updateSearchQuery(it) },
+                onSearch = { viewModel.loadUser(it) },
+                placeholder = "Search GitHub user (e.g., sigmotoa)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -73,32 +73,6 @@ fun ProfileScreen(
             }
         }
     }
-}
-
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
-    enabled: Boolean
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("GitHub Username") },
-        placeholder = { Text("Enter username (e.g., torvalds)") },
-        singleLine = true,
-        trailingIcon = {
-            Button(
-                onClick = onSearch,
-                enabled = enabled,
-                modifier = Modifier.padding(end = 4.dp)
-            ) {
-                Text("Search")
-            }
-        }
-    )
 }
 
 @Composable

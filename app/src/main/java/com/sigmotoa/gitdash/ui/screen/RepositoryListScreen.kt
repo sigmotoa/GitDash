@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
@@ -31,7 +32,6 @@ fun RepositoryListScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var searchQuery by remember { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -50,36 +50,13 @@ fun RepositoryListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search Section
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 4.dp
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("GitHub Username") },
-                        placeholder = { Text("Enter username to see repos") },
-                        singleLine = true,
-                        trailingIcon = {
-                            Button(
-                                onClick = {
-                                    if (searchQuery.isNotBlank()) {
-                                        viewModel.loadUser(searchQuery)
-                                    }
-                                },
-                                enabled = searchQuery.isNotBlank(),
-                                modifier = Modifier.padding(end = 4.dp)
-                            ) {
-                                Text("Load")
-                            }
-                        }
-                    )
-                }
-            }
+            // Shared Search Section
+            GitHubSearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = { viewModel.updateSearchQuery(it) },
+                onSearch = { viewModel.loadUser(it) },
+                placeholder = "Try 'sigmotoa' to see repositories"
+            )
 
             // Content Section with Pull to Refresh
             when {
@@ -163,7 +140,7 @@ private fun ErrorRepositoryState(error: String) {
             modifier = Modifier.padding(32.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Warning,
+                imageVector = Icons.Default.Error,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.error

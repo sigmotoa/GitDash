@@ -14,7 +14,8 @@ data class GitHubUiState(
     val user: GitHubUser? = null,
     val repos: List<GitHubRepo> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val searchQuery: String = ""
 )
 
 class GitHubViewModel(private val repository: GitHubRepository) : ViewModel() {
@@ -22,9 +23,19 @@ class GitHubViewModel(private val repository: GitHubRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(GitHubUiState())
     val uiState: StateFlow<GitHubUiState> = _uiState.asStateFlow()
 
+    fun updateSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
     fun loadUser(username: String) {
+        if (username.isBlank()) return
+
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                searchQuery = username
+            )
 
             repository.getUser(username).fold(
                 onSuccess = { user ->

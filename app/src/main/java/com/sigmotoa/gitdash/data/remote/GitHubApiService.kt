@@ -4,6 +4,7 @@ import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface GitHubApiService {
 
@@ -11,7 +12,11 @@ interface GitHubApiService {
     suspend fun getUser(@Path("username") username: String): GitHubUser
 
     @GET("users/{username}/repos")
-    suspend fun getUserRepos(@Path("username") username: String): List<GitHubRepo>
+    suspend fun getUserRepos(
+        @Path("username") username: String,
+        @Query("per_page") perPage: Int = 50,
+        @Query("sort") sort: String = "updated"
+    ): List<GitHubRepo>
 
     companion object {
         const val BASE_URL = "https://api.github.com/"
