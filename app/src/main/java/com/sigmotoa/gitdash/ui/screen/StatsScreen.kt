@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.components.PieChart
 import com.sigmotoa.gitdash.ui.components.PieChartData
@@ -241,6 +242,9 @@ private fun StatsContent(
                 TopRepositoriesCard(topRepos)
             }
         }
+
+        // AdMob Banner
+        AdMobBanner()
     }
 }
 

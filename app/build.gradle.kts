@@ -1,3 +1,7 @@
+import org.gradle.kotlin.dsl.implementation
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -11,12 +15,30 @@ android {
 
     defaultConfig {
         applicationId = "com.sigmotoa.gitdash"
-        minSdk = 35
+        minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+
+        // AdMob IDs with fallback to test IDs
+        val adMobAppId = localProperties.getProperty("adMobAppId") ?: "ca-app-pub-3940256099942544~3347511713"
+        val adUnitId = localProperties.getProperty("adUnitId") ?: "ca-app-pub-3940256099942544/6300978111"
+
+        // Add to BuildConfig
+        buildConfigField("String", "ADMOB_APP_ID", "\"$adMobAppId\"")
+        buildConfigField("String", "AD_UNIT_ID", "\"$adUnitId\"")
+
+        // Add to resources for AndroidManifest
+        resValue("string", "admob_app_id", adMobAppId)
     }
 
     buildTypes {
@@ -37,11 +59,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
 
+    implementation ("com.google.android.gms:play-services-ads:24.7.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
@@ -232,6 +233,13 @@ private fun RepositoryList(
             ) {
                 items(repos, key = { it.id }) { repo ->
                     RepositoryCard(repo = repo)
+                }
+
+                // AdMob Banner at the bottom
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    AdMobBanner()
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
         }

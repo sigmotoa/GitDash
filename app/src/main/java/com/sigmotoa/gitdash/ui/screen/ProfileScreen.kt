@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
+import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
@@ -230,6 +231,15 @@ private fun ProfileContent(user: GitHubUser) {
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // AdMob Banner
+        AdMobBanner(
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
