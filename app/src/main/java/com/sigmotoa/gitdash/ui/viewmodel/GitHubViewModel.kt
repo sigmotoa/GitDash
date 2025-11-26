@@ -66,4 +66,12 @@ class GitHubViewModel(private val repository: GitHubRepository) : ViewModel() {
             )
         }
     }
+
+    suspend fun getCommitCount(owner: String, repo: String): Result<Int> {
+        return repository.getCommitCount(owner, repo)
+    }
+
+    suspend fun getBranches(owner: String, repo: String): Result<List<String>> {
+        return repository.getBranches(owner, repo)
+    }
 }

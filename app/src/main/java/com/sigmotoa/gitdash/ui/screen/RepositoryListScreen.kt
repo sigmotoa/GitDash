@@ -30,6 +30,7 @@ import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 @Composable
 fun RepositoryListScreen(
     viewModel: GitHubViewModel,
+    onRepositoryClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -87,7 +88,8 @@ fun RepositoryListScreen(
                         } else {
                             RepositoryList(
                                 repos = uiState.repos,
-                                username = uiState.user?.login
+                                username = uiState.user?.login,
+                                onRepositoryClick = onRepositoryClick
                             )
                         }
                     }
@@ -186,7 +188,8 @@ private fun LoadingRepositoryState() {
 @Composable
 private fun RepositoryList(
     repos: List<GitHubRepo>,
-    username: String?
+    username: String?,
+    onRepositoryClick: (Int) -> Unit
 ) {
     Column {
         // Header
@@ -232,7 +235,10 @@ private fun RepositoryList(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(repos, key = { it.id }) { repo ->
-                    RepositoryCard(repo = repo)
+                    RepositoryCard(
+                        repo = repo,
+                        onClick = { onRepositoryClick(repo.id) }
+                    )
                 }
 
                 // AdMob Banner at the bottom
@@ -247,8 +253,12 @@ private fun RepositoryList(
 }
 
 @Composable
-private fun RepositoryCard(repo: GitHubRepo) {
+private fun RepositoryCard(
+    repo: GitHubRepo,
+    onClick: () -> Unit
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(

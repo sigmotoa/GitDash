@@ -21,6 +21,10 @@ data class GitHubRepo(
     val forksCount: Int = 0,
     @SerialName("language")
     val language: String? = null,
+    @SerialName("created_at")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null,
     @SerialName("owner")
     val owner: Owner
 ) {

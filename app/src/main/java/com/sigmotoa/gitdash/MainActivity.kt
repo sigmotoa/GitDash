@@ -16,13 +16,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.sigmotoa.gitdash.data.remote.RetrofitInstance
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
+import com.sigmotoa.gitdash.ui.screen.RepositoryDetailScreen
 import com.sigmotoa.gitdash.ui.screen.RepositoryListScreen
 import com.sigmotoa.gitdash.ui.screen.StatsScreen
 import com.sigmotoa.gitdash.ui.theme.GitDashTheme
@@ -32,6 +35,9 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     data object Profile : Screen("profile", "Profile", Icons.Filled.AccountCircle)
     data object Repos : Screen("repos", "Repositories", Icons.AutoMirrored.Filled.List)
     data object Stats : Screen("stats", "Stats", Icons.Filled.BarChart)
+    data object RepoDetail : Screen("repo_detail/{repoId}", "Repository Detail", Icons.AutoMirrored.Filled.List) {
+        fun createRoute(repoId: Int) = "repo_detail/$repoId"
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -92,10 +98,26 @@ fun GitDashApp(viewModel: GitHubViewModel) {
                 ProfileScreen(viewModel = viewModel)
             }
             composable(Screen.Repos.route) {
-                RepositoryListScreen(viewModel = viewModel)
+                RepositoryListScreen(
+                    viewModel = viewModel,
+                    onRepositoryClick = { repoId ->
+                        navController.navigate(Screen.RepoDetail.createRoute(repoId))
+                    }
+                )
             }
             composable(Screen.Stats.route) {
                 StatsScreen(viewModel = viewModel)
+            }
+            composable(
+                route = Screen.RepoDetail.route,
+                arguments = listOf(navArgument("repoId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val repoId = backStackEntry.arguments?.getInt("repoId") ?: return@composable
+                RepositoryDetailScreen(
+                    repoId = repoId,
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.navigateUp() }
+                )
             }
         }
     }
