@@ -24,6 +24,7 @@ import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 @Composable
 fun ProfileScreen(
     viewModel: GitHubViewModel,
+    onUserInteraction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

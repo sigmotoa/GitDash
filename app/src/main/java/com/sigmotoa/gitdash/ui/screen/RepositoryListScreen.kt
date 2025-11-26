@@ -31,6 +31,7 @@ import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 fun RepositoryListScreen(
     viewModel: GitHubViewModel,
     onRepositoryClick: (Int) -> Unit = {},
+    onUserInteraction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

@@ -37,6 +37,7 @@ fun RepositoryDetailScreen(
     repoId: Int,
     viewModel: GitHubViewModel,
     onNavigateBack: () -> Unit,
+    onUserInteraction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -274,6 +275,8 @@ fun RepositoryDetailScreen(
                 // Open in GitHub Button
                 Button(
                     onClick = {
+                        // Register click for ad tracking
+                        onUserInteraction()
                         try {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(repo.htmlUrl))
                             context.startActivity(intent)

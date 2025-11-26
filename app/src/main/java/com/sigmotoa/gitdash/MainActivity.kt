@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.sigmotoa.gitdash.ads.InterstitialAdManager
 import com.sigmotoa.gitdash.data.remote.RetrofitInstance
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
@@ -41,6 +42,9 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 }
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var interstitialAdManager: InterstitialAdManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -48,19 +52,33 @@ class MainActivity : ComponentActivity() {
         // Initialize AdMob
         MobileAds.initialize(this) {}
 
+        // Initialize Interstitial Ad Manager
+        interstitialAdManager = InterstitialAdManager(this)
+
         val repository = GitHubRepository(RetrofitInstance.api)
         val viewModel = GitHubViewModel(repository)
 
         setContent {
             GitDashTheme {
-                GitDashApp(viewModel)
+                GitDashApp(
+                    viewModel = viewModel,
+                    onUserInteraction = { interstitialAdManager.registerClick() }
+                )
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        interstitialAdManager.destroy()
     }
 }
 
 @Composable
-fun GitDashApp(viewModel: GitHubViewModel) {
+fun GitDashApp(
+    viewModel: GitHubViewModel,
+    onUserInteraction: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val items = listOf(Screen.Profile, Screen.Repos, Screen.Stats)
 
@@ -76,6 +94,9 @@ fun GitDashApp(viewModel: GitHubViewModel) {
                         label = { Text(screen.title) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
+                            // Register click for ad tracking
+                            onUserInteraction()
+
                             navController.navigate(screen.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -95,14 +116,20 @@ fun GitDashApp(viewModel: GitHubViewModel) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Profile.route) {
-                ProfileScreen(viewModel = viewModel)
+                ProfileScreen(
+                    viewModel = viewModel,
+                    onUserInteraction = onUserInteraction
+                )
             }
             composable(Screen.Repos.route) {
                 RepositoryListScreen(
                     viewModel = viewModel,
                     onRepositoryClick = { repoId ->
+                        // Register click for ad tracking
+                        onUserInteraction()
                         navController.navigate(Screen.RepoDetail.createRoute(repoId))
-                    }
+                    },
+                    onUserInteraction = onUserInteraction
                 )
             }
             composable(Screen.Stats.route) {
@@ -116,7 +143,8 @@ fun GitDashApp(viewModel: GitHubViewModel) {
                 RepositoryDetailScreen(
                     repoId = repoId,
                     viewModel = viewModel,
-                    onNavigateBack = { navController.navigateUp() }
+                    onNavigateBack = { navController.navigateUp() },
+                    onUserInteraction = onUserInteraction
                 )
             }
         }

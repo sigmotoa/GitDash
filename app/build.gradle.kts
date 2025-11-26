@@ -15,10 +15,10 @@ android {
 
     defaultConfig {
         applicationId = "com.sigmotoa.gitdash"
-        minSdk = 30
+        minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -32,10 +32,12 @@ android {
         // AdMob IDs with fallback to test IDs
         val adMobAppId = localProperties.getProperty("adMobAppId") ?: "ca-app-pub-3940256099942544~3347511713"
         val adUnitId = localProperties.getProperty("adUnitId") ?: "ca-app-pub-3940256099942544/6300978111"
+        val adUnitIntersti = localProperties.getProperty("adUnitIntersti") ?: "ca-app-pub-3940256099942544/1033173712"
 
         // Add to BuildConfig
         buildConfigField("String", "ADMOB_APP_ID", "\"$adMobAppId\"")
         buildConfigField("String", "AD_UNIT_ID", "\"$adUnitId\"")
+        buildConfigField("String", "AD_UNIT_INTERSTITIAL", "\"$adUnitIntersti\"")
 
         // Add to resources for AndroidManifest
         resValue("string", "admob_app_id", adMobAppId)
