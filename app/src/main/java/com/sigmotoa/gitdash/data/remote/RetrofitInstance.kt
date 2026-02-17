@@ -32,6 +32,13 @@ object RetrofitInstance {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
+    private val versionCheckRetrofit = Retrofit.Builder()
+        .baseUrl(VersionCheckService.BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
     val api: GitHubApiService = githubRetrofit.create(GitHubApiService::class.java)
     val gitlabApi: GitLabApiService = gitlabRetrofit.create(GitLabApiService::class.java)
+    val versionCheckApi: VersionCheckService = versionCheckRetrofit.create(VersionCheckService::class.java)
 }

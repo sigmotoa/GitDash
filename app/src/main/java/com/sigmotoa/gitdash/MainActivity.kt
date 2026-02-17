@@ -26,7 +26,13 @@ import com.sigmotoa.gitdash.ads.InterstitialAdManager
 import com.sigmotoa.gitdash.data.remote.RetrofitInstance
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
+import com.sigmotoa.gitdash.ui.components.UpdateDialog
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
+import com.sigmotoa.gitdash.version.VersionCheckManager
+import com.sigmotoa.gitdash.version.VersionUpdateInfo
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.sigmotoa.gitdash.ui.screen.RepositoryDetailScreen
 import com.sigmotoa.gitdash.ui.screen.RepositoryListScreen
 import com.sigmotoa.gitdash.ui.screen.StatsScreen
@@ -45,6 +51,8 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 class MainActivity : ComponentActivity() {
 
     private lateinit var interstitialAdManager: InterstitialAdManager
+    private lateinit var versionCheckManager: VersionCheckManager
+    private val updateInfo = mutableStateOf<VersionUpdateInfo?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,9 +64,15 @@ class MainActivity : ComponentActivity() {
         // Initialize Interstitial Ad Manager
         interstitialAdManager = InterstitialAdManager(this)
 
+        // Initialize Version Check Manager
+        versionCheckManager = VersionCheckManager(this, RetrofitInstance.versionCheckApi)
+
         val repository = GitHubRepository(RetrofitInstance.api)
         val unifiedRepository = UnifiedRepository(RetrofitInstance.api, RetrofitInstance.gitlabApi)
         val viewModel = GitHubViewModel(repository, unifiedRepository)
+
+        // Check for updates
+        checkForAppUpdates()
 
         setContent {
             GitDashTheme {
@@ -66,6 +80,27 @@ class MainActivity : ComponentActivity() {
                     viewModel = viewModel,
                     onUserInteraction = { interstitialAdManager.registerClick() }
                 )
+
+                // Show update dialog if available
+                updateInfo.value?.let { info ->
+                    if (info.isUpdateAvailable) {
+                        UpdateDialog(
+                            updateInfo = info,
+                            onDismiss = {
+                                updateInfo.value = null
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun checkForAppUpdates() {
+        lifecycleScope.launch {
+            val info = versionCheckManager.checkForUpdate()
+            if (info != null && info.isUpdateAvailable) {
+                updateInfo.value = info
             }
         }
     }
