@@ -21,7 +21,10 @@ class UnifiedRepository(
                     Result.success(UnifiedUser.fromGitHub(user))
                 }
                 Platform.GITLAB -> {
-                    val user = gitlabApiService.getUser(username)
+                    // GitLab API requires ?username= query — returns a list; take the first match
+                    val results = gitlabApiService.searchUsers(username)
+                    val user = results.firstOrNull()
+                        ?: return Result.failure(Exception("GitLab user '$username' not found"))
                     Result.success(UnifiedUser.fromGitLab(user))
                 }
             }

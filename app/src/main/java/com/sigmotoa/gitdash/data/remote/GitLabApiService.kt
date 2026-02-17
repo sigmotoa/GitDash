@@ -11,8 +11,12 @@ import retrofit2.http.Query
 
 interface GitLabApiService {
 
-    @GET("users/{username}")
-    suspend fun getUser(@Path("username") username: String): GitLabUser
+    // GitLab does NOT support GET /users/{username} — must use ?username= query param
+    // which returns a List; we take the first match in the repository layer.
+    @GET("users")
+    suspend fun searchUsers(
+        @Query("username") username: String
+    ): List<GitLabUser>
 
     @GET("users/{username}/projects")
     suspend fun getUserProjects(
