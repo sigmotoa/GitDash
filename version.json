@@ -1,7 +1,7 @@
 {
-  "version_code": 4,
-  "version_name": "1.4",
-  "release_notes": "🎉 New Features:\n• Multi-platform support: Now supports both GitHub and GitLab!\n• README viewer for repositories\n• Enhanced UI with platform selector\n\n🐛 Bug Fixes:\n• Improved performance\n• Better error handling",
+  "version_code": 5,
+  "version_name": "2.1",
+  "release_notes": "🎉 Novedades:\n• Soporte para GitHub y GitLab en una sola app\n• Visualizador de README con Markdown renderizado\n• Selector de plataforma en la barra de búsqueda\n• Notificaciones automáticas de nuevas versiones\n\n🐛 Correcciones:\n• Hotfix búsqueda de usuarios en GitLab",
   "download_url": "https://play.google.com/store/apps/details?id=com.sigmotoa.gitdash",
   "is_mandatory": false
 }
