@@ -36,6 +36,12 @@ interface GitHubApiService {
         @Query("per_page") perPage: Int = 100
     ): List<BranchResponse>
 
+    @GET("repos/{owner}/{repo}/readme")
+    suspend fun getRepoReadme(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): ReadmeResponse
+
     companion object {
         const val BASE_URL = "https://api.github.com/"
     }
@@ -52,4 +58,18 @@ data class BranchResponse(
     val name: String,
     @SerialName("protected")
     val protected: Boolean = false
+)
+
+@Serializable
+data class ReadmeResponse(
+    @SerialName("name")
+    val name: String,
+    @SerialName("path")
+    val path: String,
+    @SerialName("content")
+    val content: String,
+    @SerialName("encoding")
+    val encoding: String,
+    @SerialName("download_url")
+    val downloadUrl: String? = null
 )

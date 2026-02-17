@@ -74,4 +74,8 @@ class GitHubViewModel(private val repository: GitHubRepository) : ViewModel() {
     suspend fun getBranches(owner: String, repo: String): Result<List<String>> {
         return repository.getBranches(owner, repo)
     }
+
+    suspend fun getReadme(owner: String, repo: String): Result<String> {
+        return repository.getReadme(owner, repo)
+    }
 }

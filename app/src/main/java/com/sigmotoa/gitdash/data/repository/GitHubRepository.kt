@@ -1,5 +1,6 @@
 package com.sigmotoa.gitdash.data.repository
 
+import android.util.Base64
 import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.remote.GitHubApiService
@@ -47,6 +48,22 @@ class GitHubRepository(private val apiService: GitHubApiService) {
         return try {
             val branches = apiService.getRepoBranches(owner, repo)
             Result.success(branches.map { it.name })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getReadme(owner: String, repo: String): Result<String> {
+        return try {
+            val readmeResponse = apiService.getRepoReadme(owner, repo)
+            // Decode base64 content
+            val decodedContent = if (readmeResponse.encoding == "base64") {
+                val cleanContent = readmeResponse.content.replace("\n", "")
+                String(Base64.decode(cleanContent, Base64.DEFAULT))
+            } else {
+                readmeResponse.content
+            }
+            Result.success(decodedContent)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -46,6 +46,9 @@ fun RepositoryDetailScreen(
     var isLoadingCommits by remember { mutableStateOf(false) }
     var branches by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoadingBranches by remember { mutableStateOf(false) }
+    var readmeContent by remember { mutableStateOf<String?>(null) }
+    var isLoadingReadme by remember { mutableStateOf(false) }
+    var readmeError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -53,6 +56,7 @@ fun RepositoryDetailScreen(
         if (repo != null) {
             isLoadingCommits = true
             isLoadingBranches = true
+            isLoadingReadme = true
             scope.launch {
                 val commitResult = viewModel.getCommitCount(repo.owner.login, repo.name)
                 commitResult.onSuccess { count ->
@@ -66,6 +70,17 @@ fun RepositoryDetailScreen(
                     branches = branchList
                 }
                 isLoadingBranches = false
+            }
+            scope.launch {
+                val readmeResult = viewModel.getReadme(repo.owner.login, repo.name)
+                readmeResult.onSuccess { content ->
+                    readmeContent = content
+                    readmeError = null
+                }.onFailure { error ->
+                    readmeError = error.message ?: "README not available"
+                    readmeContent = null
+                }
+                isLoadingReadme = false
             }
         }
     }
@@ -268,6 +283,78 @@ fun RepositoryDetailScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+                }
+
+                // README Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "README",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (isLoadingReadme) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        }
+
+                        HorizontalDivider()
+
+                        when {
+                            isLoadingReadme -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                            readmeError != null -> {
+                                Text(
+                                    text = readmeError ?: "README not available",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            readmeContent != null -> {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(12.dp)
+                                            .heightIn(max = 400.dp)
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
+                                        Text(
+                                            text = readmeContent ?: "",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
