@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
+import com.sigmotoa.gitdash.ui.components.MarkdownText
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.launch
@@ -313,16 +314,26 @@ fun RepositoryDetailScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Header row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "README",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "📄",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = "README",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                             if (isLoadingReadme) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
@@ -338,39 +349,44 @@ fun RepositoryDetailScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(vertical = 24.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator()
-                                }
-                            }
-                            readmeError != null -> {
-                                Text(
-                                    text = readmeError ?: "README not available",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            readmeContent != null -> {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant
-                                ) {
                                     Column(
-                                        modifier = Modifier
-                                            .padding(12.dp)
-                                            .heightIn(max = 400.dp)
-                                            .verticalScroll(rememberScrollState())
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
+                                        CircularProgressIndicator()
                                         Text(
-                                            text = readmeContent ?: "",
+                                            text = "Loading README…",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
+                            }
+
+                            readmeError != null -> {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    Text(text = "ℹ️", style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        text = "README not available for this repository.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            readmeContent != null -> {
+                                // Rendered Markdown using Markwon
+                                MarkdownText(
+                                    markdown = readmeContent!!,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
