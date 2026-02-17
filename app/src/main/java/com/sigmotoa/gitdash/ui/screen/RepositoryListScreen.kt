@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
@@ -58,16 +59,17 @@ fun RepositoryListScreen(
                 query = uiState.searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
                 onSearch = { viewModel.loadUser(it) },
-                placeholder = "Try 'sigmotoa' to see repositories"
+                selectedPlatform = uiState.selectedPlatform,
+                onPlatformChange = { viewModel.updatePlatform(it) }
             )
 
             // Content Section with Pull to Refresh
             when {
-                uiState.user == null && !uiState.isLoading -> {
+                uiState.unifiedUser == null && !uiState.isLoading -> {
                     EmptyRepositoryState()
                 }
 
-                uiState.error != null && uiState.repos.isEmpty() -> {
+                uiState.error != null && uiState.unifiedRepos.isEmpty() -> {
                     ErrorRepositoryState(error = uiState.error!!)
                 }
 
@@ -75,21 +77,21 @@ fun RepositoryListScreen(
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
                         onRefresh = {
-                            if (uiState.user != null) {
+                            if (uiState.unifiedUser != null) {
                                 isRefreshing = true
-                                viewModel.loadUser(uiState.user!!.login)
+                                viewModel.loadUser(uiState.unifiedUser!!.username)
                                 // Simulate refresh delay
                                 isRefreshing = false
                             }
                         },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (uiState.isLoading && uiState.repos.isEmpty()) {
+                        if (uiState.isLoading && uiState.unifiedRepos.isEmpty()) {
                             LoadingRepositoryState()
                         } else {
-                            RepositoryList(
-                                repos = uiState.repos,
-                                username = uiState.user?.login,
+                            UnifiedRepositoryList(
+                                repos = uiState.unifiedRepos,
+                                username = uiState.unifiedUser?.username,
                                 onRepositoryClick = onRepositoryClick
                             )
                         }
@@ -390,5 +392,143 @@ private fun formatCount(count: Int): String {
     return when {
         count >= 1000 -> "${count / 1000}k"
         else -> count.toString()
+    }
+}
+
+@Composable
+private fun UnifiedRepositoryList(
+    repos: List<UnifiedRepo>,
+    username: String?,
+    onRepositoryClick: (Int) -> Unit
+) {
+    Column {
+        // Header
+        if (username != null && repos.isNotEmpty()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "@$username's Repositories",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "${repos.size} repos",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        if (repos.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No public repositories found",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(repos, key = { it.id }) { repo ->
+                    UnifiedRepositoryCard(
+                        repo = repo,
+                        onClick = { onRepositoryClick(repo.id) }
+                    )
+                }
+
+                // AdMob Banner at the bottom
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    AdMobBanner()
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnifiedRepositoryCard(
+    repo: UnifiedRepo,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Repository Name
+            Text(
+                text = repo.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // Description
+            if (!repo.description.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = repo.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Badges Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Language Badge
+                repo.language?.let { language ->
+                    LanguageBadge(language = language)
+                }
+
+                // Stars Badge
+                if (repo.starCount > 0) {
+                    StatBadge(
+                        icon = "⭐",
+                        count = repo.starCount,
+                        color = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                }
+
+                // Forks Badge
+                if (repo.forksCount > 0) {
+                    StatBadge(
+                        icon = "🍴",
+                        count = repo.forksCount,
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                }
+            }
+        }
     }
 }

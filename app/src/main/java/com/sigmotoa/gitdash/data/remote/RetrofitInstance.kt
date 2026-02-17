@@ -20,11 +20,18 @@ object RetrofitInstance {
         })
         .build()
 
-    private val retrofit = Retrofit.Builder()
+    private val githubRetrofit = Retrofit.Builder()
         .baseUrl(GitHubApiService.BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
-    val api: GitHubApiService = retrofit.create(GitHubApiService::class.java)
+    private val gitlabRetrofit = Retrofit.Builder()
+        .baseUrl(GitLabApiService.BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
+    val api: GitHubApiService = githubRetrofit.create(GitHubApiService::class.java)
+    val gitlabApi: GitLabApiService = gitlabRetrofit.create(GitLabApiService::class.java)
 }

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.launch
@@ -41,7 +42,7 @@ fun RepositoryDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val repo = uiState.repos.find { it.id == repoId }
+    val repo = uiState.unifiedRepos.find { it.id == repoId }
     var commitCount by remember { mutableStateOf<Int?>(null) }
     var isLoadingCommits by remember { mutableStateOf(false) }
     var branches by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -58,21 +59,37 @@ fun RepositoryDetailScreen(
             isLoadingBranches = true
             isLoadingReadme = true
             scope.launch {
-                val commitResult = viewModel.getCommitCount(repo.owner.login, repo.name)
+                val commitResult = viewModel.getCommitCount(
+                    repo.owner.login,
+                    repo.name,
+                    repo.platform,
+                    repo.id
+                )
                 commitResult.onSuccess { count ->
                     commitCount = count
                 }
                 isLoadingCommits = false
             }
             scope.launch {
-                val branchResult = viewModel.getBranches(repo.owner.login, repo.name)
+                val branchResult = viewModel.getBranches(
+                    repo.owner.login,
+                    repo.name,
+                    repo.platform,
+                    repo.id
+                )
                 branchResult.onSuccess { branchList ->
                     branches = branchList
                 }
                 isLoadingBranches = false
             }
             scope.launch {
-                val readmeResult = viewModel.getReadme(repo.owner.login, repo.name)
+                val readmeResult = viewModel.getReadme(
+                    repo.owner.login,
+                    repo.name,
+                    repo.platform,
+                    repo.id,
+                    null // defaultBranch can be added to UnifiedRepo if needed
+                )
                 readmeResult.onSuccess { content ->
                     readmeContent = content
                     readmeError = null
@@ -161,7 +178,7 @@ fun RepositoryDetailScreen(
                     StatCard(
                         icon = Icons.Default.Star,
                         label = "Stars",
-                        value = repo.stargazersCount.toString(),
+                        value = repo.starCount.toString(),
                         color = MaterialTheme.colorScheme.tertiaryContainer,
                         modifier = Modifier.weight(1f)
                     )

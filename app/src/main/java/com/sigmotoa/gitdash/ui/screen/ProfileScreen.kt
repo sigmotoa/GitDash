@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
+import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
@@ -32,7 +33,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("GitHub Profile") },
+                title = { Text("${uiState.selectedPlatform.displayName} Profile") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -50,7 +51,8 @@ fun ProfileScreen(
                 query = uiState.searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
                 onSearch = { viewModel.loadUser(it) },
-                placeholder = "Search GitHub user (e.g., sigmotoa)"
+                selectedPlatform = uiState.selectedPlatform,
+                onPlatformChange = { viewModel.updatePlatform(it) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -65,8 +67,8 @@ fun ProfileScreen(
                     ErrorContent(error = uiState.error!!)
                 }
 
-                uiState.user != null -> {
-                    ProfileContent(user = uiState.user!!)
+                uiState.unifiedUser != null -> {
+                    UnifiedProfileContent(user = uiState.unifiedUser!!)
                 }
 
                 else -> {
@@ -120,10 +122,138 @@ private fun EmptyContent() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Search for a GitHub user to view their profile",
+            text = "Search for a user to view their profile",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun UnifiedProfileContent(user: UnifiedUser) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Avatar
+        AsyncImage(
+            model = user.avatarUrl,
+            contentDescription = "User avatar",
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Name and Username
+        Text(
+            text = user.name ?: user.username,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = "@${user.username}",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Platform Badge
+        SuggestionChip(
+            onClick = { },
+            label = { Text(user.platform.displayName) },
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Bio
+        user.bio?.let { bio ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    text = bio,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Additional Info
+        if (user.company != null || user.location != null || user.blog != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    user.company?.let {
+                        InfoRow(label = "Company", value = it)
+                    }
+                    user.location?.let {
+                        InfoRow(label = "Location", value = it)
+                    }
+                    user.blog?.let {
+                        if (it.isNotBlank()) {
+                            InfoRow(label = "Website/Email", value = it)
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Stats Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Statistics",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    if (user.publicRepos > 0) {
+                        StatColumn(label = "Repositories", value = user.publicRepos)
+                        VerticalDivider(modifier = Modifier.height(48.dp))
+                    }
+                    StatColumn(label = "Followers", value = user.followers)
+                    VerticalDivider(modifier = Modifier.height(48.dp))
+                    StatColumn(label = "Following", value = user.following)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // AdMob Banner
+        AdMobBanner(
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

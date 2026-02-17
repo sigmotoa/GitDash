@@ -25,6 +25,7 @@ import androidx.navigation.navArgument
 import com.sigmotoa.gitdash.ads.InterstitialAdManager
 import com.sigmotoa.gitdash.data.remote.RetrofitInstance
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
+import com.sigmotoa.gitdash.data.repository.UnifiedRepository
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
 import com.sigmotoa.gitdash.ui.screen.RepositoryDetailScreen
 import com.sigmotoa.gitdash.ui.screen.RepositoryListScreen
@@ -56,7 +57,8 @@ class MainActivity : ComponentActivity() {
         interstitialAdManager = InterstitialAdManager(this)
 
         val repository = GitHubRepository(RetrofitInstance.api)
-        val viewModel = GitHubViewModel(repository)
+        val unifiedRepository = UnifiedRepository(RetrofitInstance.api, RetrofitInstance.gitlabApi)
+        val viewModel = GitHubViewModel(repository, unifiedRepository)
 
         setContent {
             GitDashTheme {

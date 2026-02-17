@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sigmotoa.gitdash.data.model.GitHubRepo
+import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.components.PieChart
@@ -63,7 +64,8 @@ fun StatsScreen(
                 query = uiState.searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
                 onSearch = { viewModel.loadUser(it) },
-                placeholder = "Try 'sigmotoa' for statistics"
+                selectedPlatform = uiState.selectedPlatform,
+                onPlatformChange = { viewModel.updatePlatform(it) }
             )
 
             // Content Section
@@ -72,17 +74,17 @@ fun StatsScreen(
                     LoadingStatsState()
                 }
 
-                uiState.error != null && uiState.user == null -> {
+                uiState.error != null && uiState.unifiedUser == null -> {
                     ErrorStatsState(error = uiState.error!!)
                 }
 
-                uiState.user != null -> {
+                uiState.unifiedUser != null -> {
                     StatsContent(
-                        username = uiState.user!!.login,
-                        publicRepos = uiState.user!!.publicRepos,
-                        followers = uiState.user!!.followers,
-                        following = uiState.user!!.following,
-                        repos = uiState.repos
+                        username = uiState.unifiedUser!!.username,
+                        publicRepos = uiState.unifiedUser!!.publicRepos,
+                        followers = uiState.unifiedUser!!.followers,
+                        following = uiState.unifiedUser!!.following,
+                        repos = uiState.unifiedRepos
                     )
                 }
 
@@ -178,7 +180,7 @@ private fun StatsContent(
     publicRepos: Int,
     followers: Int,
     following: Int,
-    repos: List<GitHubRepo>
+    repos: List<UnifiedRepo>
 ) {
     Column(
         modifier = Modifier
@@ -227,7 +229,7 @@ private fun StatsContent(
             }
 
             // Total Stars
-            val totalStars = repos.sumOf { it.stargazersCount }
+            val totalStars = repos.sumOf { it.starCount }
             val totalForks = repos.sumOf { it.forksCount }
 
             TotalStatsCard(
@@ -237,8 +239,8 @@ private fun StatsContent(
             )
 
             // Top Repositories
-            val topRepos = repos.sortedByDescending { it.stargazersCount }.take(5)
-            if (topRepos.any { it.stargazersCount > 0 }) {
+            val topRepos = repos.sortedByDescending { it.starCount }.take(5)
+            if (topRepos.any { it.starCount > 0 }) {
                 TopRepositoriesCard(topRepos)
             }
         }
@@ -452,7 +454,7 @@ private fun ImpactStat(label: String, value: Int) {
 }
 
 @Composable
-private fun TopRepositoriesCard(topRepos: List<GitHubRepo>) {
+private fun TopRepositoriesCard(topRepos: List<UnifiedRepo>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -468,7 +470,7 @@ private fun TopRepositoriesCard(topRepos: List<GitHubRepo>) {
             Spacer(modifier = Modifier.height(16.dp))
 
             topRepos.forEachIndexed { index, repo ->
-                if (repo.stargazersCount > 0) {
+                if (repo.starCount > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -495,7 +497,7 @@ private fun TopRepositoriesCard(topRepos: List<GitHubRepo>) {
                             }
                         }
                         Text(
-                            text = "⭐ ${repo.stargazersCount}",
+                            text = "⭐ ${repo.starCount}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.tertiary
@@ -510,7 +512,7 @@ private fun TopRepositoriesCard(topRepos: List<GitHubRepo>) {
     }
 }
 
-private fun calculateLanguageStats(repos: List<GitHubRepo>): Map<String, Int> {
+private fun calculateLanguageStats(repos: List<UnifiedRepo>): Map<String, Int> {
     return repos
         .mapNotNull { it.language }
         .groupingBy { it }
