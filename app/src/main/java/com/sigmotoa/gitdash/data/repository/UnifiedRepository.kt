@@ -101,6 +101,43 @@ class UnifiedRepository(
         }
     }
 
+    suspend fun getContributions(
+        username: String,
+        platform: Platform,
+        userId: Int
+    ): Result<Map<String, Int>> {
+        return try {
+            val dateCount = mutableMapOf<String, Int>()
+            when (platform) {
+                Platform.GITHUB -> {
+                    for (page in 1..3) {
+                        val events = githubApiService.getUserEvents(username, perPage = 100, page = page)
+                        if (events.isEmpty()) break
+                        events.forEach { event ->
+                            val date = event.createdAt.take(10)
+                            dateCount[date] = (dateCount[date] ?: 0) + 1
+                        }
+                        if (events.size < 100) break
+                    }
+                }
+                Platform.GITLAB -> {
+                    for (page in 1..3) {
+                        val events = gitlabApiService.getUserEvents(userId, perPage = 100, page = page)
+                        if (events.isEmpty()) break
+                        events.forEach { event ->
+                            val date = event.createdAt.take(10)
+                            dateCount[date] = (dateCount[date] ?: 0) + 1
+                        }
+                        if (events.size < 100) break
+                    }
+                }
+            }
+            Result.success(dateCount)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getReadme(owner: String, repoName: String, platform: Platform, repoId: Int? = null, defaultBranch: String? = null): Result<String> {
         return try {
             when (platform) {

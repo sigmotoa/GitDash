@@ -43,10 +43,24 @@ interface GitLabApiService {
         @Query("ref") ref: String = "main"
     ): GitLabReadmeResponse
 
+    @GET("users/{id}/events")
+    suspend fun getUserEvents(
+        @Path("id") userId: Int,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitLabEventResponse>
+
     companion object {
         const val BASE_URL = "https://gitlab.com/api/v4/"
     }
 }
+
+@Serializable
+data class GitLabEventResponse(
+    @SerialName("created_at")
+    val createdAt: String
+)
+
 
 @Serializable
 data class GitLabCommitResponse(

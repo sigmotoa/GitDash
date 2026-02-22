@@ -97,4 +97,7 @@ class GitHubViewModel(
         return unifiedRepository.getReadme(owner, repo, platform, repoId, defaultBranch)
     }
 
+    suspend fun getContributions(username: String, platform: Platform, userId: Int): Result<Map<String, Int>> {
+        return unifiedRepository.getContributions(username, platform, userId)
+    }
 }

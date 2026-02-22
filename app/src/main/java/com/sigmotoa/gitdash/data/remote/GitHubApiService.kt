@@ -42,10 +42,23 @@ interface GitHubApiService {
         @Path("repo") repo: String
     ): ReadmeResponse
 
+    @GET("users/{username}/events")
+    suspend fun getUserEvents(
+        @Path("username") username: String,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
+    ): List<GitHubEventResponse>
+
     companion object {
         const val BASE_URL = "https://api.github.com/"
     }
 }
+
+@Serializable
+data class GitHubEventResponse(
+    @SerialName("created_at")
+    val createdAt: String
+)
 
 @Serializable
 data class CommitResponse(

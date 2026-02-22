@@ -18,6 +18,7 @@ import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
+import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
@@ -29,6 +30,29 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var contributionMap by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var contributionLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.unifiedUser) {
+        val user = uiState.unifiedUser
+        if (user != null) {
+            contributionMap = emptyMap()
+            contributionLoading = true
+            viewModel.getContributions(user.username, user.platform, user.id).fold(
+                onSuccess = { data ->
+                    contributionMap = data
+                    contributionLoading = false
+                },
+                onFailure = {
+                    contributionLoading = false
+                }
+            )
+        } else {
+            contributionMap = emptyMap()
+            contributionLoading = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -68,7 +92,11 @@ fun ProfileScreen(
                 }
 
                 uiState.unifiedUser != null -> {
-                    UnifiedProfileContent(user = uiState.unifiedUser!!)
+                    UnifiedProfileContent(
+                        user = uiState.unifiedUser!!,
+                        contributionMap = contributionMap,
+                        contributionLoading = contributionLoading
+                    )
                 }
 
                 else -> {
@@ -130,7 +158,11 @@ private fun EmptyContent() {
 }
 
 @Composable
-private fun UnifiedProfileContent(user: UnifiedUser) {
+private fun UnifiedProfileContent(
+    user: UnifiedUser,
+    contributionMap: Map<String, Int> = emptyMap(),
+    contributionLoading: Boolean = false
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -242,6 +274,44 @@ private fun UnifiedProfileContent(user: UnifiedUser) {
                     StatColumn(label = "Followers", value = user.followers)
                     VerticalDivider(modifier = Modifier.height(48.dp))
                     StatColumn(label = "Following", value = user.following)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Contribution heatmap
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Activity (last ~4 months)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (contributionLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                if (contributionMap.isNotEmpty()) {
+                    ContributionGraph(
+                        contributionMap = contributionMap,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else if (!contributionLoading) {
+                    Text(
+                        text = "No public activity found",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
