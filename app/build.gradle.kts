@@ -102,7 +102,9 @@ dependencies {
     implementation(libs.markwon.ext.strikethrough)
     implementation(libs.markwon.ext.tables)
     implementation(libs.markwon.html)
+    implementation(libs.markwon.image)
     implementation(libs.markwon.linkify)
+    implementation(libs.androidsvg)  // SVG support for markwon-image (skill icons, shields, etc.)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

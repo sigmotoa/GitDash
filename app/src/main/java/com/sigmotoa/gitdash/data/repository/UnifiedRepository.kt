@@ -101,6 +101,46 @@ class UnifiedRepository(
         }
     }
 
+    suspend fun getProfileReadme(username: String, platform: Platform): Result<String> {
+        return try {
+            when (platform) {
+                Platform.GITHUB -> {
+                    val readmeResponse = githubApiService.getRepoReadme(username, username)
+                    val decodedContent = if (readmeResponse.encoding == "base64") {
+                        val cleanContent = readmeResponse.content.replace("\n", "")
+                        String(Base64.decode(cleanContent, Base64.DEFAULT))
+                    } else {
+                        readmeResponse.content
+                    }
+                    Result.success(decodedContent)
+                }
+                Platform.GITLAB -> {
+                    val projects = gitlabApiService.getUserProjects(username)
+                    val profileProject = projects.firstOrNull { project ->
+                        project.namespace.path.equals(username, ignoreCase = true) &&
+                        project.name.equals(username, ignoreCase = true)
+                    } ?: return Result.failure(Exception("No profile README project found for '$username'"))
+                    val branch = profileProject.defaultBranch ?: "main"
+                    try {
+                        val r = gitlabApiService.getProjectReadme(profileProject.id, branch)
+                        val content = if (r.encoding == "base64")
+                            String(Base64.decode(r.content.replace("\n", ""), Base64.DEFAULT))
+                        else r.content
+                        Result.success(content)
+                    } catch (e: Exception) {
+                        val r = gitlabApiService.getProjectReadme(profileProject.id, "master")
+                        val content = if (r.encoding == "base64")
+                            String(Base64.decode(r.content.replace("\n", ""), Base64.DEFAULT))
+                        else r.content
+                        Result.success(content)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getReadme(owner: String, repoName: String, platform: Platform, repoId: Int? = null, defaultBranch: String? = null): Result<String> {
         return try {
             when (platform) {

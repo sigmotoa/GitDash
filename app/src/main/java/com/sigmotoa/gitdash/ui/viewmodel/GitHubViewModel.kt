@@ -96,4 +96,8 @@ class GitHubViewModel(
     suspend fun getReadme(owner: String, repo: String, platform: Platform, repoId: Int? = null, defaultBranch: String? = null): Result<String> {
         return unifiedRepository.getReadme(owner, repo, platform, repoId, defaultBranch)
     }
+
+    suspend fun getProfileReadme(username: String, platform: Platform): Result<String> {
+        return unifiedRepository.getProfileReadme(username, platform)
+    }
 }

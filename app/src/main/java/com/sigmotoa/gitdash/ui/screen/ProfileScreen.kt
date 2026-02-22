@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,6 +21,7 @@ import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
+import com.sigmotoa.gitdash.ui.components.MarkdownText
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +32,30 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var profileReadme by remember { mutableStateOf<String?>(null) }
+    var profileReadmeLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.unifiedUser) {
+        val user = uiState.unifiedUser
+        if (user != null) {
+            profileReadme = null
+            profileReadmeLoading = true
+            viewModel.getProfileReadme(user.username, user.platform).fold(
+                onSuccess = { content ->
+                    profileReadme = content
+                    profileReadmeLoading = false
+                },
+                onFailure = {
+                    profileReadme = null
+                    profileReadmeLoading = false
+                }
+            )
+        } else {
+            profileReadme = null
+            profileReadmeLoading = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -68,7 +95,11 @@ fun ProfileScreen(
                 }
 
                 uiState.unifiedUser != null -> {
-                    UnifiedProfileContent(user = uiState.unifiedUser!!)
+                    UnifiedProfileContent(
+                        user = uiState.unifiedUser!!,
+                        profileReadme = profileReadme,
+                        profileReadmeLoading = profileReadmeLoading
+                    )
                 }
 
                 else -> {
@@ -130,7 +161,11 @@ private fun EmptyContent() {
 }
 
 @Composable
-private fun UnifiedProfileContent(user: UnifiedUser) {
+private fun UnifiedProfileContent(
+    user: UnifiedUser,
+    profileReadme: String? = null,
+    profileReadmeLoading: Boolean = false
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -247,6 +282,59 @@ private fun UnifiedProfileContent(user: UnifiedUser) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Profile README
+        if (profileReadmeLoading) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Loading profile README…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        } else if (profileReadme != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Profile README",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    MarkdownText(
+                        markdown = profileReadme,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // AdMob Banner
         AdMobBanner(
