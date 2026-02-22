@@ -58,7 +58,11 @@ interface GitLabApiService {
 @Serializable
 data class GitLabEventResponse(
     @SerialName("created_at")
-    val createdAt: String
+    val createdAt: String,
+    @SerialName("action_name")
+    val actionName: String = "",
+    @SerialName("target_type")
+    val targetType: String? = null
 )
 
 

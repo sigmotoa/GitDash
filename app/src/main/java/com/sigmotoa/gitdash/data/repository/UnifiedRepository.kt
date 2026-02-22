@@ -8,6 +8,30 @@ import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import com.sigmotoa.gitdash.data.remote.GitLabApiService
 import java.net.URLEncoder
 
+data class ContributionData(
+    val dateMap: Map<String, Int>,
+    val categoryCounts: Map<String, Int>
+)
+
+private fun categorizeGitHubEvent(type: String): String = when (type) {
+    "PushEvent"                                -> "Commits"
+    "PullRequestEvent"                         -> "PRs"
+    "IssuesEvent"                              -> "Issues"
+    "IssueCommentEvent", "CommitCommentEvent",
+    "PullRequestReviewCommentEvent",
+    "PullRequestReviewEvent"                   -> "Comments"
+    else                                       -> "Other"
+}
+
+private fun categorizeGitLabEvent(actionName: String, targetType: String?): String = when {
+    actionName.contains("push", ignoreCase = true)   -> "Commits"
+    targetType == "MergeRequest"                      -> "PRs"
+    actionName in listOf("accepted", "merged")        -> "PRs"
+    targetType == "Issue"                             -> "Issues"
+    actionName.contains("comment", ignoreCase = true) -> "Comments"
+    else                                              -> "Other"
+}
+
 class UnifiedRepository(
     private val githubApiService: GitHubApiService,
     private val gitlabApiService: GitLabApiService
@@ -105,9 +129,10 @@ class UnifiedRepository(
         username: String,
         platform: Platform,
         userId: Int
-    ): Result<Map<String, Int>> {
+    ): Result<ContributionData> {
         return try {
             val dateCount = mutableMapOf<String, Int>()
+            val categoryCount = mutableMapOf<String, Int>()
             when (platform) {
                 Platform.GITHUB -> {
                     for (page in 1..3) {
@@ -116,6 +141,8 @@ class UnifiedRepository(
                         events.forEach { event ->
                             val date = event.createdAt.take(10)
                             dateCount[date] = (dateCount[date] ?: 0) + 1
+                            val category = categorizeGitHubEvent(event.type)
+                            categoryCount[category] = (categoryCount[category] ?: 0) + 1
                         }
                         if (events.size < 100) break
                     }
@@ -127,12 +154,14 @@ class UnifiedRepository(
                         events.forEach { event ->
                             val date = event.createdAt.take(10)
                             dateCount[date] = (dateCount[date] ?: 0) + 1
+                            val category = categorizeGitLabEvent(event.actionName, event.targetType)
+                            categoryCount[category] = (categoryCount[category] ?: 0) + 1
                         }
                         if (events.size < 100) break
                     }
                 }
             }
-            Result.success(dateCount)
+            Result.success(ContributionData(dateCount, categoryCount))
         } catch (e: Exception) {
             Result.failure(e)
         }

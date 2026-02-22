@@ -32,16 +32,19 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var contributionMap by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var categoryCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var contributionLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.unifiedUser) {
         val user = uiState.unifiedUser
         if (user != null) {
             contributionMap = emptyMap()
+            categoryCounts = emptyMap()
             contributionLoading = true
             viewModel.getContributions(user.username, user.platform, user.id).fold(
                 onSuccess = { data ->
-                    contributionMap = data
+                    contributionMap = data.dateMap
+                    categoryCounts = data.categoryCounts
                     contributionLoading = false
                 },
                 onFailure = {
@@ -50,6 +53,7 @@ fun ProfileScreen(
             )
         } else {
             contributionMap = emptyMap()
+            categoryCounts = emptyMap()
             contributionLoading = false
         }
     }
@@ -95,6 +99,7 @@ fun ProfileScreen(
                     UnifiedProfileContent(
                         user = uiState.unifiedUser!!,
                         contributionMap = contributionMap,
+                        categoryCounts = categoryCounts,
                         contributionLoading = contributionLoading
                     )
                 }
@@ -161,6 +166,7 @@ private fun EmptyContent() {
 private fun UnifiedProfileContent(
     user: UnifiedUser,
     contributionMap: Map<String, Int> = emptyMap(),
+    categoryCounts: Map<String, Int> = emptyMap(),
     contributionLoading: Boolean = false
 ) {
     Column(
@@ -304,6 +310,7 @@ private fun UnifiedProfileContent(
                 if (contributionMap.isNotEmpty()) {
                     ContributionGraph(
                         contributionMap = contributionMap,
+                        categoryCounts = categoryCounts,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else if (!contributionLoading) {

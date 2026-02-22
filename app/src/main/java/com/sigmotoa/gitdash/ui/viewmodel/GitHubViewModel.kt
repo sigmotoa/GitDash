@@ -7,6 +7,7 @@ import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.Platform
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.data.model.UnifiedUser
+import com.sigmotoa.gitdash.data.repository.ContributionData
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,7 +98,7 @@ class GitHubViewModel(
         return unifiedRepository.getReadme(owner, repo, platform, repoId, defaultBranch)
     }
 
-    suspend fun getContributions(username: String, platform: Platform, userId: Int): Result<Map<String, Int>> {
+    suspend fun getContributions(username: String, platform: Platform, userId: Int): Result<ContributionData> {
         return unifiedRepository.getContributions(username, platform, userId)
     }
 }

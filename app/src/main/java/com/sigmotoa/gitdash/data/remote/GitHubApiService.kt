@@ -57,7 +57,9 @@ interface GitHubApiService {
 @Serializable
 data class GitHubEventResponse(
     @SerialName("created_at")
-    val createdAt: String
+    val createdAt: String,
+    @SerialName("type")
+    val type: String = ""
 )
 
 @Serializable
