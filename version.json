@@ -1,7 +1,7 @@
 {
-  "version_code": 5,
-  "version_name": "2.1",
-  "release_notes": "🎉 Novedades:\n• Soporte para GitHub y GitLab en una sola app\n• Visualizador de README con Markdown renderizado\n• Selector de plataforma en la barra de búsqueda\n• Notificaciones automáticas de nuevas versiones\n\n🐛 Correcciones:\n• Hotfix búsqueda de usuarios en GitLab",
+  "version_code": 6,
+  "version_name": "3.0",
+  "release_notes": "🎉 Novedades v3.0:\n• Gráfico de actividad de contribuciones (últimos 4 meses)\n• Reporte de perfil exportable en PDF\n• Anuncio recompensado: mira el ad y obtén tu reporte\n• Badges e íconos de tecnologías en los README\n• Totales de actividad: commits, PRs, issues y comentarios\n\n📊 El reporte incluye:\n• Seguidores, seguidos, estrellas y repos públicos\n• Commits recientes y repositorio más activo\n• Último repositorio trabajado\n• Top 3 lenguajes de programación\n\n🐛 Mejoras:\n• Mayor estabilidad en la carga de perfiles",
   "download_url": "https://play.google.com/store/apps/details?id=com.sigmotoa.gitdash",
-  "is_mandatory": false
+  "is_mandatory": true
 }

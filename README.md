@@ -1,203 +1,268 @@
 # GitDash 📱
 
-A modern Android application built with Jetpack Compose and Material 3 that allows users to explore GitHub profiles and repositories.
+A modern Android application built with Jetpack Compose and Material 3 for exploring developer profiles and repositories across **GitHub and GitLab** — all in one place.
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-0095D5?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+![Version](https://img.shields.io/badge/version-3.0-blue?style=for-the-badge)
+
+---
 
 ## ✨ Features
 
-- **GitHub Profile Viewer**: Search and view detailed GitHub user profiles
-  - User avatar, name, username, and bio
-  - Company, location, and website information
-  - Statistics: public repositories, followers, and following counts
+### 👤 Multi-Platform Profile Viewer
+Search and view developer profiles on both **GitHub** and **GitLab** from a single search bar.
+- Avatar, name, username, bio, company, location, and website
+- Followers, following, and public repository counts
+- Platform badge indicating GitHub or GitLab
 
-- **Repository Explorer**: Browse user's public repositories
-  - Repository name and description
-  - Language badges with authentic GitHub colors
-  - Stars and forks count with formatted numbers
-  - Pull-to-refresh functionality
+### 📊 Contribution Activity Heatmap
+A native-style contribution graph showing activity over the **last ~4 months**.
+- 18-week × 7-day color grid (5 intensity levels)
+- Month and day-of-week labels
+- Activity totals: **Commits · PRs · Issues · Comments · Other**
+- Powered by the public Events API — no authentication required
 
-- **Modern UI/UX**:
-  - Material 3 Design with dynamic theming
-  - Dark and light theme support
-  - Bottom navigation for easy screen switching
-  - Smooth animations and transitions
-  - Loading, error, and empty states
+### 📄 PDF Profile Report
+Export a shareable **A4 PDF report** of any developer profile directly from the TopBar.
+- Username, followers, following, stars, public repos
+- Recent commit count and most-active repository
+- Last worked-on repository and top 3 programming languages
+- Generated date — no external PDF library needed (Android `PdfDocument`)
+
+### 💰 Rewarded Interstitial Ad
+The PDF report is unlocked as a **reward** after watching a short interstitial ad (AdMob).
+- Ad loads on demand when the Share button is tapped
+- PDF is generated and shared only after the reward is earned
+- Graceful fallback if the ad network is unavailable
+
+### 📖 Markdown README Viewer
+Read repository READMEs rendered as rich Markdown inside the app.
+- Full Markdown support: headers, tables, strikethrough, links, code blocks
+- **SVG and PNG badge/icon rendering** (shields.io, devicons, vectorlogo.zone)
+- Aspect-ratio-preserving image sizing
+- Powered by [Markwon](https://github.com/noties/Markwon)
+
+### 🗂️ Repository Explorer
+Browse a user's public repositories with key metadata at a glance.
+- Repository name, description, and primary language badge
+- Stars, forks, and last-updated timestamp
+- Tap to view the full README
+
+### 🔔 Automatic Version Check
+The app checks for newer versions on launch and notifies the user with a dismissible dialog.
+- Version info served from a remote `version.json`
+- Supports mandatory and optional update prompts
+
+### 🎨 Modern UI/UX
+- Material 3 with dynamic color (Android 12+)
+- Dark and light theme support
+- Bottom navigation bar
+- Skeleton loading, error, and empty states throughout
+
+---
+
+## 🗺️ App Evolution
+
+| Version | Code | Highlights |
+|---------|------|-----------|
+| **3.0** | 6 | Contribution heatmap, PDF report, rewarded ad, SVG badge support |
+| **2.1** | 5 | Hotfix: GitLab user search returning 404 |
+| **2.0** | 3–4 | Multi-platform (GitHub + GitLab), Markdown README viewer, version check system |
+| **1.0** | 1–2 | Initial release — GitHub profile and repository viewer |
+
+---
 
 ## 🏗️ Architecture
 
-The app follows **MVVM (Model-View-ViewModel)** architecture pattern with clean separation of concerns:
+The app follows **MVVM** with a clean layered architecture:
 
 ```
-app/
+app/src/main/java/com/sigmotoa/gitdash/
 ├── data/
-│   ├── model/          # Data models
-│   ├── remote/         # API service and Retrofit configuration
-│   └── repository/     # Repository layer for data operations
+│   ├── model/               # UnifiedUser, UnifiedRepo, ContributionData, Platform…
+│   ├── remote/              # GitHubApiService, GitLabApiService (Retrofit interfaces)
+│   └── repository/          # UnifiedRepository — single source of truth for both platforms
 ├── ui/
-│   ├── screen/         # Composable screens
-│   ├── theme/          # Material 3 theming
-│   ├── utils/          # UI utilities
-│   └── viewmodel/      # ViewModels for state management
-└── MainActivity.kt     # Entry point with navigation
+│   ├── components/          # AdMobBanner, ContributionGraph, GitHubSearchBar, MarkdownText
+│   ├── screen/              # ProfileScreen, RepositoryListScreen, RepoDetailScreen
+│   ├── theme/               # Color, Type, Theme (Material 3)
+│   ├── util/                # ProfileReportGenerator (PDF)
+│   └── viewmodel/           # GitHubViewModel + GitHubUiState
+└── MainActivity.kt          # Navigation host
 ```
+
+### Key Design Decisions
+- **`UnifiedRepository`** abstracts the differences between the GitHub REST API v3 and GitLab REST API v4 behind a single interface, returning platform-agnostic `UnifiedUser` and `UnifiedRepo` models.
+- **`ContributionData`** bundles the date heatmap, event-category counts, and top-pushed repo into a single result, fetched once per profile load.
+- **`ProfileReportGenerator`** uses Android's built-in `android.graphics.pdf.PdfDocument` drawn with `Canvas` — zero external dependencies for PDF generation.
+- **`MarkdownText`** wraps a `TextView` inside `AndroidView` with a lifecycle-aware Markwon instance (cached with `remember`) to avoid recreating the renderer on every recomposition.
+
+---
 
 ## 🛠️ Tech Stack
 
 ### Core
-- **Kotlin** - Primary programming language
-- **Jetpack Compose** - Modern declarative UI framework
-- **Material 3** - Latest Material Design components
-
-### Architecture & Lifecycle
-- **MVVM Architecture** - Clean separation of concerns
-- **ViewModel** - Lifecycle-aware state management
-- **StateFlow** - Reactive state handling
-- **Coroutines** - Asynchronous programming
+| Library | Purpose |
+|---------|---------|
+| **Kotlin 2.0** | Primary language |
+| **Jetpack Compose** | Declarative UI |
+| **Material 3** | Design system + dynamic color |
+| **Coroutines + StateFlow** | Async state management |
 
 ### Networking
-- **Retrofit 2** - HTTP client for REST API calls
-- **OkHttp** - Network interceptor and logging
-- **Kotlinx Serialization** - JSON parsing
+| Library | Purpose |
+|---------|---------|
+| **Retrofit 2** | HTTP client |
+| **OkHttp** | Interceptors & logging |
+| **Kotlinx Serialization** | JSON deserialization |
 
-### Image Loading
-- **Coil 3** - Image loading library optimized for Compose
+### UI & Rendering
+| Library | Purpose |
+|---------|---------|
+| **Coil 3** | Image loading (Compose-native) |
+| **Markwon 4.6** | Markdown → TextView rendering |
+| **markwon-image + androidsvg** | SVG badge & icon support |
+| **Android `PdfDocument`** | PDF generation (built-in, no extra dep) |
 
-### Navigation
-- **Navigation Compose** - Type-safe navigation for Compose
+### Ads & Monetization
+| Library | Purpose |
+|---------|---------|
+| **Google Mobile Ads SDK** | Banner + Rewarded Interstitial ads |
+| **AdMob** | Ad network (IDs stored in `local.properties`) |
+
+### Navigation & DI
+| Library | Purpose |
+|---------|---------|
+| **Navigation Compose** | Bottom-nav + back-stack |
+| **Manual DI** | Repository + ViewModel wiring in `MainActivity` |
 
 ### Minimum Requirements
-- **Min SDK**: 35 (Android 12+)
-- **Target SDK**: 36
-- **Compile SDK**: 36
+- **Min SDK**: 26 (Android 8.0 — needed for `java.time`)
+- **Target / Compile SDK**: 36
 - **JVM Target**: Java 11
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Android Studio Hedgehog or newer
-- JDK 11 or higher
-- Android device or emulator running Android 12+
+- JDK 11+
+- Android device or emulator running Android 8.0+
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/sigmotoa/gitdash.git
-cd gitdash
+git clone https://github.com/sigmotoa/GitDash.git
+cd GitDash
 ```
 
-2. Open the project in Android Studio
+Open in Android Studio, then:
 
-3. Sync Gradle files:
 ```bash
-./gradlew build
-```
+# Build
+./gradlew assembleDebug
 
-4. Run the app:
-```bash
+# Install on connected device/emulator
 ./gradlew installDebug
 ```
 
-Or click the Run button in Android Studio
+### AdMob Configuration
+
+Create (or update) `local.properties` with your ad unit IDs:
+
+```properties
+adMobAppId=ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
+adUnitId=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX          # Banner
+adUnitIntersti=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX    # Interstitial
+adMobRegard=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX       # Rewarded Interstitial (PDF report)
+```
+
+> During development you can use [Google test IDs](https://developers.google.com/admob/android/test-ads) — they are set as the fallback default in `build.gradle.kts`.
+
+---
 
 ## 📋 Usage
 
-1. **Search for a User**:
-   - Open the Profile or Repositories tab
-   - Enter a GitHub username in the search field
-   - Tap "Search" or "Load" to fetch data
+### Search a profile
+1. Tap the **Profile** tab
+2. Select **GitHub** or **GitLab** using the platform toggle
+3. Type a username and tap **Search**
 
-2. **View Profile**:
-   - Navigate to the Profile tab
-   - View user details, stats, and information
+### View activity heatmap
+The contribution grid loads automatically below the profile stats — green cells indicate activity intensity over the last ~4 months.
 
-3. **Browse Repositories**:
-   - Navigate to the Repositories tab
-   - Scroll through the user's public repositories
-   - Pull down to refresh the list
+### Export a PDF report
+1. With a profile loaded, tap the **Share (↑)** icon in the TopBar
+2. Watch the short rewarded ad
+3. The PDF is generated and the system share sheet opens automatically
 
-## 🎨 Screenshots
+### Browse repositories
+1. Tap the **Repositories** tab
+2. Scroll through public repos; tap any to open the README viewer
 
-<!-- Add screenshots here -->
-```
-[Profile Screen]  [Repository List]  [Dark Theme]
-```
-
-## 🔧 Configuration
-
-The app uses the GitHub REST API v3. No API key is required for public data, but you may hit rate limits for unauthenticated requests.
-
-To add authentication (optional):
-1. Generate a GitHub Personal Access Token
-2. Add it to `RetrofitInstance.kt` as a header interceptor
+---
 
 ## 📦 Build Variants
 
-- **Debug**: Development build with logging enabled
-- **Release**: Production build with ProGuard optimization
+| Variant | Notes |
+|---------|-------|
+| `debug` | Logging enabled, test AdMob IDs as fallback |
+| `release` | ProGuard available; use real AdMob IDs in `local.properties` |
 
-Build the release APK:
 ```bash
 ./gradlew assembleRelease
 ```
 
+---
+
 ## 🧪 Testing
 
-Run unit tests:
 ```bash
+# Unit tests
 ./gradlew test
-```
 
-Run instrumented tests:
-```bash
+# Lint
+./gradlew lint
+
+# Instrumented tests (requires device/emulator)
 ./gradlew connectedAndroidTest
 ```
 
-## 📝 Project Structure
-
-### Key Files
-- `MainActivity.kt` - App entry point and navigation setup
-- `GitHubViewModel.kt` - State management and business logic
-- `GitHubRepository.kt` - Data repository layer
-- `GitHubApiService.kt` - Retrofit API interface
-- `ProfileScreen.kt` - User profile UI
-- `RepositoryListScreen.kt` - Repository list UI
-
-### Dependencies Management
-Dependencies are managed using Gradle Version Catalog:
-- `gradle/libs.versions.toml` - Version catalog
-- `build.gradle.kts` - Root build configuration
-- `app/build.gradle.kts` - App module configuration
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m "feat: add my feature"`
+4. Push: `git push origin feature/my-feature`
+5. Open a Pull Request targeting `main`
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+
+---
 
 ## 🙏 Acknowledgments
 
-- [GitHub REST API](https://docs.github.com/en/rest) for providing the data
-- [Jetpack Compose](https://developer.android.com/jetpack/compose) for the modern UI toolkit
-- [Material Design 3](https://m3.material.io/) for design guidelines
-- Language colors inspired by [GitHub's linguist](https://github.com/github/linguist)
+- [GitHub REST API v3](https://docs.github.com/en/rest)
+- [GitLab REST API v4](https://docs.gitlab.com/ee/api/rest/)
+- [Jetpack Compose](https://developer.android.com/jetpack/compose)
+- [Material Design 3](https://m3.material.io/)
+- [Markwon](https://github.com/noties/Markwon) by @noties
+- Language colors inspired by [GitHub Linguist](https://github.com/github/linguist)
+
+---
 
 ## 📧 Contact
 
-Your Name - [@sigmotoa](https://github.com/sigmotoa)
-
-Project Link: [https://github.com/sigmotoa/gitdash](https://github.com/sigmotoa/gitdash)
+[@sigmotoa](https://github.com/sigmotoa) · [GitDash on GitHub](https://github.com/sigmotoa/GitDash)
 
 ---
 
