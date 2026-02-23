@@ -1,5 +1,6 @@
 package com.sigmotoa.gitdash.ui.screen
 
+import android.app.Activity
 import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
+import com.sigmotoa.gitdash.BuildConfig
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
@@ -74,16 +82,17 @@ fun ProfileScreen(
         }
     }
 
-    val generateAndShareReport = {
-        val user = uiState.unifiedUser
-        if (user != null && !isGeneratingReport) {
-            isGeneratingReport = true
+    // Generates the PDF on IO thread then fires the system share sheet.
+    // Called from the reward callback (or as fallback if ad fails to load).
+    val doSharePdf: () -> Unit = {
+        val currentUser = uiState.unifiedUser
+        if (currentUser != null) {
             scope.launch(Dispatchers.Main) {
                 try {
                     val file = withContext(Dispatchers.IO) {
                         ProfileReportGenerator.generate(
                             context        = context,
-                            user           = user,
+                            user           = currentUser,
                             repos          = uiState.unifiedRepos,
                             categoryCounts = categoryCounts,
                             topPushedRepo  = topPushedRepo
@@ -99,7 +108,7 @@ fun ProfileScreen(
                         putExtra(Intent.EXTRA_STREAM, uri)
                         putExtra(
                             Intent.EXTRA_SUBJECT,
-                            "GitDash Profile Report - @${user.username}"
+                            "GitDash Profile Report - @${currentUser.username}"
                         )
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
@@ -110,6 +119,53 @@ fun ProfileScreen(
                     isGeneratingReport = false
                 }
             }
+        } else {
+            isGeneratingReport = false
+        }
+    }
+
+    // Entry point: show rewarded interstitial first; PDF is the reward.
+    val generateAndShareReport = {
+        val user = uiState.unifiedUser
+        if (user != null && !isGeneratingReport) {
+            isGeneratingReport = true
+            val activity = context as? Activity
+
+            RewardedInterstitialAd.load(
+                context,
+                BuildConfig.AD_UNIT_REWARDED,
+                AdRequest.Builder().build(),
+                object : RewardedInterstitialAdLoadCallback() {
+
+                    override fun onAdLoaded(ad: RewardedInterstitialAd) {
+                        // If we can't obtain an Activity reference, fall through to PDF
+                        if (activity == null) { doSharePdf(); return }
+
+                        var rewardEarned = false
+                        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                            // User closed the ad before earning the reward
+                            override fun onAdDismissedFullScreenContent() {
+                                if (!rewardEarned) isGeneratingReport = false
+                            }
+                            // Ad couldn't display — fall through to PDF
+                            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                                doSharePdf()
+                            }
+                        }
+
+                        // Show ad; PDF is generated when the reward is earned
+                        ad.show(activity) { _ ->
+                            rewardEarned = true
+                            doSharePdf()
+                        }
+                    }
+
+                    // Ad network unavailable — fall through to PDF
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        doSharePdf()
+                    }
+                }
+            )
         }
     }
 

@@ -30,14 +30,16 @@ android {
         }
 
         // AdMob IDs with fallback to test IDs
-        val adMobAppId = localProperties.getProperty("adMobAppId") ?: "ca-app-pub-3940256099942544~3347511713"
-        val adUnitId = localProperties.getProperty("adUnitId") ?: "ca-app-pub-3940256099942544/6300978111"
+        val adMobAppId     = localProperties.getProperty("adMobAppId")     ?: "ca-app-pub-3940256099942544~3347511713"
+        val adUnitId       = localProperties.getProperty("adUnitId")       ?: "ca-app-pub-3940256099942544/6300978111"
         val adUnitIntersti = localProperties.getProperty("adUnitIntersti") ?: "ca-app-pub-3940256099942544/1033173712"
+        val adMobRegard    = localProperties.getProperty("adMobRegard")    ?: "ca-app-pub-3940256099942544/5224354917"
 
         // Add to BuildConfig
-        buildConfigField("String", "ADMOB_APP_ID", "\"$adMobAppId\"")
-        buildConfigField("String", "AD_UNIT_ID", "\"$adUnitId\"")
+        buildConfigField("String", "ADMOB_APP_ID",         "\"$adMobAppId\"")
+        buildConfigField("String", "AD_UNIT_ID",           "\"$adUnitId\"")
         buildConfigField("String", "AD_UNIT_INTERSTITIAL", "\"$adUnitIntersti\"")
+        buildConfigField("String", "AD_UNIT_REWARDED",     "\"$adMobRegard\"")
 
         // Add to resources for AndroidManifest
         resValue("string", "admob_app_id", adMobAppId)
