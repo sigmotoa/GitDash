@@ -31,12 +31,6 @@ Export a shareable **A4 PDF report** of any developer profile directly from the 
 - Last worked-on repository and top 3 programming languages
 - Generated date — no external PDF library needed (Android `PdfDocument`)
 
-### 💰 Rewarded Interstitial Ad
-The PDF report is unlocked as a **reward** after watching a short interstitial ad (AdMob).
-- Ad loads on demand when the Share button is tapped
-- PDF is generated and shared only after the reward is earned
-- Graceful fallback if the ad network is unavailable
-
 ### 📖 Markdown README Viewer
 Read repository READMEs rendered as rich Markdown inside the app.
 - Full Markdown support: headers, tables, strikethrough, links, code blocks
@@ -126,11 +120,6 @@ app/src/main/java/com/sigmotoa/gitdash/
 | **markwon-image + androidsvg** | SVG badge & icon support |
 | **Android `PdfDocument`** | PDF generation (built-in, no extra dep) |
 
-### Ads & Monetization
-| Library | Purpose |
-|---------|---------|
-| **Google Mobile Ads SDK** | Banner + Rewarded Interstitial ads |
-| **AdMob** | Ad network (IDs stored in `local.properties`) |
 
 ### Navigation & DI
 | Library | Purpose |
@@ -168,19 +157,6 @@ Open in Android Studio, then:
 # Install on connected device/emulator
 ./gradlew installDebug
 ```
-
-### AdMob Configuration
-
-Create (or update) `local.properties` with your ad unit IDs:
-
-```properties
-adMobAppId=ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
-adUnitId=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX          # Banner
-adUnitIntersti=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX    # Interstitial
-adMobRegard=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX       # Rewarded Interstitial (PDF report)
-```
-
-> During development you can use [Google test IDs](https://developers.google.com/admob/android/test-ads) — they are set as the fallback default in `build.gradle.kts`.
 
 ---
 

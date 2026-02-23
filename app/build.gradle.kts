@@ -17,8 +17,8 @@ android {
         applicationId = "com.sigmotoa.gitdash"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "2.1"
+        versionCode = 6
+        versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
