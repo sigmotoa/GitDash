@@ -1,9 +1,12 @@
 package com.sigmotoa.gitdash.ui.screen
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -11,8 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
@@ -20,7 +25,11 @@ import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
+import com.sigmotoa.gitdash.ui.util.ProfileReportGenerator
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,21 +39,27 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope   = rememberCoroutineScope()
 
-    var contributionMap by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var categoryCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var contributionMap    by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var categoryCounts     by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var topPushedRepo      by remember { mutableStateOf<String?>(null) }
     var contributionLoading by remember { mutableStateOf(false) }
+    var isGeneratingReport  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.unifiedUser) {
         val user = uiState.unifiedUser
         if (user != null) {
-            contributionMap = emptyMap()
-            categoryCounts = emptyMap()
+            contributionMap  = emptyMap()
+            categoryCounts   = emptyMap()
+            topPushedRepo    = null
             contributionLoading = true
             viewModel.getContributions(user.username, user.platform, user.id).fold(
                 onSuccess = { data ->
-                    contributionMap = data.dateMap
-                    categoryCounts = data.categoryCounts
+                    contributionMap  = data.dateMap
+                    categoryCounts   = data.categoryCounts
+                    topPushedRepo    = data.topPushedRepo
                     contributionLoading = false
                 },
                 onFailure = {
@@ -52,9 +67,49 @@ fun ProfileScreen(
                 }
             )
         } else {
-            contributionMap = emptyMap()
-            categoryCounts = emptyMap()
+            contributionMap  = emptyMap()
+            categoryCounts   = emptyMap()
+            topPushedRepo    = null
             contributionLoading = false
+        }
+    }
+
+    val generateAndShareReport = {
+        val user = uiState.unifiedUser
+        if (user != null && !isGeneratingReport) {
+            isGeneratingReport = true
+            scope.launch(Dispatchers.Main) {
+                try {
+                    val file = withContext(Dispatchers.IO) {
+                        ProfileReportGenerator.generate(
+                            context        = context,
+                            user           = user,
+                            repos          = uiState.unifiedRepos,
+                            categoryCounts = categoryCounts,
+                            topPushedRepo  = topPushedRepo
+                        )
+                    }
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file
+                    )
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(
+                            Intent.EXTRA_SUBJECT,
+                            "GitDash Profile Report - @${user.username}"
+                        )
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, "Share Profile Report")
+                    )
+                } finally {
+                    isGeneratingReport = false
+                }
+            }
         }
     }
 
@@ -65,7 +120,28 @@ fun ProfileScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ),
+                actions = {
+                    if (uiState.unifiedUser != null) {
+                        if (isGeneratingReport) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .padding(end = 12.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        } else {
+                            IconButton(onClick = generateAndShareReport) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Generate PDF Report",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
             )
         }
     ) { paddingValues ->

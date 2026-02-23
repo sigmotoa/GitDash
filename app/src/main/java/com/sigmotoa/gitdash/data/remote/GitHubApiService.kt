@@ -59,7 +59,15 @@ data class GitHubEventResponse(
     @SerialName("created_at")
     val createdAt: String,
     @SerialName("type")
-    val type: String = ""
+    val type: String = "",
+    @SerialName("repo")
+    val repo: GitHubEventRepo? = null
+)
+
+@Serializable
+data class GitHubEventRepo(
+    @SerialName("name")
+    val name: String = ""   // format: "owner/reponame"
 )
 
 @Serializable
