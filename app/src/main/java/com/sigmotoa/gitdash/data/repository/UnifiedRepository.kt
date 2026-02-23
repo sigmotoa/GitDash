@@ -10,7 +10,8 @@ import java.net.URLEncoder
 
 data class ContributionData(
     val dateMap: Map<String, Int>,
-    val categoryCounts: Map<String, Int>
+    val categoryCounts: Map<String, Int>,
+    val topPushedRepo: String? = null   // repo with most push events in the window
 )
 
 private fun categorizeGitHubEvent(type: String): String = when (type) {
@@ -133,6 +134,7 @@ class UnifiedRepository(
         return try {
             val dateCount = mutableMapOf<String, Int>()
             val categoryCount = mutableMapOf<String, Int>()
+            val repoPushCount = mutableMapOf<String, Int>()
             when (platform) {
                 Platform.GITHUB -> {
                     for (page in 1..3) {
@@ -143,6 +145,12 @@ class UnifiedRepository(
                             dateCount[date] = (dateCount[date] ?: 0) + 1
                             val category = categorizeGitHubEvent(event.type)
                             categoryCount[category] = (categoryCount[category] ?: 0) + 1
+                            if (event.type == "PushEvent") {
+                                val repoName = event.repo?.name?.substringAfterLast("/") ?: ""
+                                if (repoName.isNotEmpty()) {
+                                    repoPushCount[repoName] = (repoPushCount[repoName] ?: 0) + 1
+                                }
+                            }
                         }
                         if (events.size < 100) break
                     }
@@ -161,7 +169,8 @@ class UnifiedRepository(
                     }
                 }
             }
-            Result.success(ContributionData(dateCount, categoryCount))
+            val topPushedRepo = repoPushCount.maxByOrNull { it.value }?.key
+            Result.success(ContributionData(dateCount, categoryCount, topPushedRepo))
         } catch (e: Exception) {
             Result.failure(e)
         }
