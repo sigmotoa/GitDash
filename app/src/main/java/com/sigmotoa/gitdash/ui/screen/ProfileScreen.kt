@@ -30,6 +30,7 @@ import com.sigmotoa.gitdash.BuildConfig
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
+import com.sigmotoa.gitdash.data.repository.LastCommitInfo
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
@@ -50,24 +51,30 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
-    var contributionMap    by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var categoryCounts     by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var topPushedRepo      by remember { mutableStateOf<String?>(null) }
+    var contributionMap     by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var categoryCounts      by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var topPushedRepo       by remember { mutableStateOf<String?>(null) }
+    var topReposByPushes    by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var lastCommitInfo      by remember { mutableStateOf<LastCommitInfo?>(null) }
     var contributionLoading by remember { mutableStateOf(false) }
     var isGeneratingReport  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.unifiedUser) {
         val user = uiState.unifiedUser
         if (user != null) {
-            contributionMap  = emptyMap()
-            categoryCounts   = emptyMap()
-            topPushedRepo    = null
+            contributionMap   = emptyMap()
+            categoryCounts    = emptyMap()
+            topPushedRepo     = null
+            topReposByPushes  = emptyList()
+            lastCommitInfo    = null
             contributionLoading = true
             viewModel.getContributions(user.username, user.platform, user.id).fold(
                 onSuccess = { data ->
-                    contributionMap  = data.dateMap
-                    categoryCounts   = data.categoryCounts
-                    topPushedRepo    = data.topPushedRepo
+                    contributionMap   = data.dateMap
+                    categoryCounts    = data.categoryCounts
+                    topPushedRepo     = data.topPushedRepo
+                    topReposByPushes  = data.topReposByPushes
+                    lastCommitInfo    = data.lastCommitInfo
                     contributionLoading = false
                 },
                 onFailure = {
@@ -75,9 +82,11 @@ fun ProfileScreen(
                 }
             )
         } else {
-            contributionMap  = emptyMap()
-            categoryCounts   = emptyMap()
-            topPushedRepo    = null
+            contributionMap   = emptyMap()
+            categoryCounts    = emptyMap()
+            topPushedRepo     = null
+            topReposByPushes  = emptyList()
+            lastCommitInfo    = null
             contributionLoading = false
         }
     }
@@ -91,11 +100,13 @@ fun ProfileScreen(
                 try {
                     val file = withContext(Dispatchers.IO) {
                         ProfileReportGenerator.generate(
-                            context        = context,
-                            user           = currentUser,
-                            repos          = uiState.unifiedRepos,
-                            categoryCounts = categoryCounts,
-                            topPushedRepo  = topPushedRepo
+                            context          = context,
+                            user             = currentUser,
+                            repos            = uiState.unifiedRepos,
+                            categoryCounts   = categoryCounts,
+                            dateMap          = contributionMap,
+                            topReposByPushes = topReposByPushes,
+                            lastCommitInfo   = lastCommitInfo
                         )
                     }
                     val uri = FileProvider.getUriForFile(

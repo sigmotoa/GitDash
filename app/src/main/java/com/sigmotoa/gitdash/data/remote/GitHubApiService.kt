@@ -61,13 +61,21 @@ data class GitHubEventResponse(
     @SerialName("type")
     val type: String = "",
     @SerialName("repo")
-    val repo: GitHubEventRepo? = null
+    val repo: GitHubEventRepo? = null,
+    @SerialName("payload")
+    val payload: GitHubEventPayload? = null
 )
 
 @Serializable
 data class GitHubEventRepo(
     @SerialName("name")
     val name: String = ""   // format: "owner/reponame"
+)
+
+@Serializable
+data class GitHubEventPayload(
+    @SerialName("size")
+    val size: Int? = null   // number of commits in a PushEvent
 )
 
 @Serializable

@@ -1,7 +1,7 @@
 {
-  "version_code": 6,
-  "version_name": "3.0",
-  "release_notes": "🎉 Novedades v3.0:\n• Gráfico de actividad de contribuciones (últimos 4 meses)\n• Reporte de perfil exportable en PDF\n• Anuncio recompensado: mira el ad y obtén tu reporte\n• Badges e íconos de tecnologías en los README\n• Totales de actividad: commits, PRs, issues y comentarios\n\n📊 El reporte incluye:\n• Seguidores, seguidos, estrellas y repos públicos\n• Commits recientes y repositorio más activo\n• Último repositorio trabajado\n• Top 3 lenguajes de programación\n\n🐛 Mejoras:\n• Mayor estabilidad en la carga de perfiles",
+  "version_code": 7,
+  "version_name": "3.1",
+  "release_notes": "🎉 Novedades v3.1:\n•  Reporte de perfil exportable en PDF mejorado.\n• Ahora tambien valido para @Gitlab\n• \n• Totales de actividadmejorados: commits, PRs, issues y comentarios\n\n📊 El reporte incluye:\n• Foto de perfil. \n• Commits recientes y repositorio más activo\n• Último repositorio trabajado\n• Top 3 lenguajes de programación\n\n🐛 Mejoras:\n• Mayor estabilidad en la carga de perfiles",
   "download_url": "https://play.google.com/store/apps/details?id=com.sigmotoa.gitdash",
   "is_mandatory": true
 }

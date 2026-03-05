@@ -8,10 +8,19 @@ import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import com.sigmotoa.gitdash.data.remote.GitLabApiService
 import java.net.URLEncoder
 
+/** Info about the most-recent push captured in the events window. */
+data class LastCommitInfo(
+    val repoName: String,       // short name (after last "/")
+    val repoFullName: String,   // "owner/reponame"
+    val date: String            // ISO "yyyy-MM-dd"
+)
+
 data class ContributionData(
     val dateMap: Map<String, Int>,
     val categoryCounts: Map<String, Int>,
-    val topPushedRepo: String? = null   // repo with most push events in the window
+    val topPushedRepo: String? = null,                          // repo with most commits in window
+    val topReposByPushes: List<Pair<String, Int>> = emptyList(), // top 3 repos by actual commit count
+    val lastCommitInfo: LastCommitInfo? = null                  // most recent push in window
 )
 
 private fun categorizeGitHubEvent(type: String): String = when (type) {
@@ -134,7 +143,13 @@ class UnifiedRepository(
         return try {
             val dateCount = mutableMapOf<String, Int>()
             val categoryCount = mutableMapOf<String, Int>()
-            val repoPushCount = mutableMapOf<String, Int>()
+            val repoPushCount = mutableMapOf<String, Int>()   // key=short repo name, value=actual commit count
+
+            // Captured from the first (newest) PushEvent seen in the window
+            var lastPushDate: String? = null
+            var lastPushRepoName: String? = null
+            var lastPushRepoFull: String? = null
+
             when (platform) {
                 Platform.GITHUB -> {
                     for (page in 1..3) {
@@ -144,12 +159,23 @@ class UnifiedRepository(
                             val date = event.createdAt.take(10)
                             dateCount[date] = (dateCount[date] ?: 0) + 1
                             val category = categorizeGitHubEvent(event.type)
-                            categoryCount[category] = (categoryCount[category] ?: 0) + 1
                             if (event.type == "PushEvent") {
-                                val repoName = event.repo?.name?.substringAfterLast("/") ?: ""
+                                // payload.size = number of commits in this push; fall back to 1
+                                val commitCount = (event.payload?.size ?: 0).let { if (it > 0) it else 1 }
+                                categoryCount[category] = (categoryCount[category] ?: 0) + commitCount
+                                val repoFullName = event.repo?.name ?: ""
+                                val repoName = repoFullName.substringAfterLast("/")
                                 if (repoName.isNotEmpty()) {
-                                    repoPushCount[repoName] = (repoPushCount[repoName] ?: 0) + 1
+                                    repoPushCount[repoName] = (repoPushCount[repoName] ?: 0) + commitCount
+                                    // Events arrive newest-first; capture the very first PushEvent seen
+                                    if (lastPushDate == null) {
+                                        lastPushDate = date
+                                        lastPushRepoName = repoName
+                                        lastPushRepoFull = repoFullName
+                                    }
                                 }
+                            } else {
+                                categoryCount[category] = (categoryCount[category] ?: 0) + 1
                             }
                         }
                         if (events.size < 100) break
@@ -169,8 +195,17 @@ class UnifiedRepository(
                     }
                 }
             }
-            val topPushedRepo = repoPushCount.maxByOrNull { it.value }?.key
-            Result.success(ContributionData(dateCount, categoryCount, topPushedRepo))
+
+            val topReposByPushes = repoPushCount.entries
+                .sortedByDescending { it.value }
+                .take(3)
+                .map { it.key to it.value }
+            val topPushedRepo = topReposByPushes.firstOrNull()?.first
+            val lastCommitInfo = if (lastPushRepoName != null && lastPushDate != null)
+                LastCommitInfo(lastPushRepoName!!, lastPushRepoFull ?: "", lastPushDate!!)
+            else null
+
+            Result.success(ContributionData(dateCount, categoryCount, topPushedRepo, topReposByPushes, lastCommitInfo))
         } catch (e: Exception) {
             Result.failure(e)
         }
