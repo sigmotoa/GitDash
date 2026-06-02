@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,14 +32,17 @@ import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.repository.LastCommitInfo
+import com.sigmotoa.gitdash.data.repository.RawEventRecord
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
+import com.sigmotoa.gitdash.ui.util.DiffReportGenerator
 import com.sigmotoa.gitdash.ui.util.ProfileReportGenerator
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,13 +55,15 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
-    var contributionMap     by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var categoryCounts      by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var topPushedRepo       by remember { mutableStateOf<String?>(null) }
-    var topReposByPushes    by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
-    var lastCommitInfo      by remember { mutableStateOf<LastCommitInfo?>(null) }
-    var contributionLoading by remember { mutableStateOf(false) }
-    var isGeneratingReport  by remember { mutableStateOf(false) }
+    var contributionMap      by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var categoryCounts       by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var topPushedRepo        by remember { mutableStateOf<String?>(null) }
+    var topReposByPushes     by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var lastCommitInfo       by remember { mutableStateOf<LastCommitInfo?>(null) }
+    var rawPushEvents        by remember { mutableStateOf<List<RawEventRecord>>(emptyList()) }
+    var contributionLoading  by remember { mutableStateOf(false) }
+    var isGeneratingReport   by remember { mutableStateOf(false) }
+    var showDateRangeDialog  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.unifiedUser) {
         val user = uiState.unifiedUser
@@ -67,6 +73,7 @@ fun ProfileScreen(
             topPushedRepo     = null
             topReposByPushes  = emptyList()
             lastCommitInfo    = null
+            rawPushEvents     = emptyList()
             contributionLoading = true
             viewModel.getContributions(user.username, user.platform, user.id).fold(
                 onSuccess = { data ->
@@ -75,6 +82,7 @@ fun ProfileScreen(
                     topPushedRepo     = data.topPushedRepo
                     topReposByPushes  = data.topReposByPushes
                     lastCommitInfo    = data.lastCommitInfo
+                    rawPushEvents     = data.rawPushEvents
                     contributionLoading = false
                 },
                 onFailure = {
@@ -87,6 +95,7 @@ fun ProfileScreen(
             topPushedRepo     = null
             topReposByPushes  = emptyList()
             lastCommitInfo    = null
+            rawPushEvents     = emptyList()
             contributionLoading = false
         }
     }
@@ -180,6 +189,117 @@ fun ProfileScreen(
         }
     }
 
+    // ── Date-range diff report: PDF generation (the reward action) ─────────
+    val doShareDiffPdf: (LocalDate, LocalDate) -> Unit = { startDate, endDate ->
+        val currentUser = uiState.unifiedUser
+        if (currentUser != null) {
+            scope.launch(Dispatchers.Main) {
+                try {
+                    val reposInRange = rawPushEvents
+                        .filter { it.date >= startDate.toString() && it.date <= endDate.toString() }
+                        .groupBy { it.repoFullName }
+                        .mapValues { (_, list) -> list.sumOf { it.commitCount } }
+                        .entries
+                        .sortedByDescending { it.value }
+                        .take(5)
+                        .map { it.key }
+                        .filter { it.isNotEmpty() }
+
+                    val linesAdded = withContext(Dispatchers.IO) {
+                        viewModel.getLinesAddedInRange(
+                            currentUser.username, reposInRange, startDate, endDate, currentUser.platform
+                        )
+                    }
+
+                    val file = withContext(Dispatchers.IO) {
+                        DiffReportGenerator.generate(
+                            context       = context,
+                            user          = currentUser,
+                            repos         = uiState.unifiedRepos,
+                            rawPushEvents = rawPushEvents,
+                            startDate     = startDate,
+                            endDate       = endDate,
+                            linesAdded    = linesAdded
+                        )
+                    }
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file
+                    )
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(
+                            Intent.EXTRA_SUBJECT,
+                            "GitDash Activity Report - @${currentUser.username} ($startDate to $endDate)"
+                        )
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share Activity Report"))
+                } finally {
+                    isGeneratingReport = false
+                }
+            }
+        } else {
+            isGeneratingReport = false
+        }
+    }
+
+    // Entry point for diff report: rewarded interstitial → PDF as reward.
+    val generateAndShareDiffReport: (LocalDate, LocalDate) -> Unit = { startDate, endDate ->
+        val user = uiState.unifiedUser
+        if (user != null && !isGeneratingReport) {
+            isGeneratingReport   = true
+            showDateRangeDialog  = false
+            val activity = context as? Activity
+
+            RewardedInterstitialAd.load(
+                context,
+                BuildConfig.AD_UNIT_REWARDED,
+                AdRequest.Builder().build(),
+                object : RewardedInterstitialAdLoadCallback() {
+
+                    override fun onAdLoaded(ad: RewardedInterstitialAd) {
+                        if (activity == null) { doShareDiffPdf(startDate, endDate); return }
+
+                        var rewardEarned = false
+                        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                            override fun onAdDismissedFullScreenContent() {
+                                if (!rewardEarned) isGeneratingReport = false
+                            }
+                            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                                doShareDiffPdf(startDate, endDate)
+                            }
+                        }
+                        ad.show(activity) { _ ->
+                            rewardEarned = true
+                            doShareDiffPdf(startDate, endDate)
+                        }
+                    }
+
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        doShareDiffPdf(startDate, endDate)
+                    }
+                }
+            )
+        }
+    }
+
+    // ── Date-range diff report dialog ──────────────────────────────────────
+    if (showDateRangeDialog) {
+        val currentUser = uiState.unifiedUser
+        if (currentUser != null) {
+            DateRangeReportDialog(
+                username  = currentUser.username,
+                onDismiss = { showDateRangeDialog = false },
+                onGenerate = { startDate, endDate ->
+                    generateAndShareDiffReport(startDate, endDate)
+                }
+            )
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -199,6 +319,18 @@ fun ProfileScreen(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         } else {
+                            // Date-range diff report
+                            IconButton(
+                                onClick = { showDateRangeDialog = true },
+                                enabled = rawPushEvents.isNotEmpty()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Activity Report by Date Range",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            // Full profile report
                             IconButton(onClick = generateAndShareReport) {
                                 Icon(
                                     imageVector = Icons.Default.Share,

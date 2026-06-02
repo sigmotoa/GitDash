@@ -62,7 +62,9 @@ data class GitLabEventResponse(
     @SerialName("action_name")
     val actionName: String = "",
     @SerialName("target_type")
-    val targetType: String? = null
+    val targetType: String? = null,
+    @SerialName("project_id")
+    val projectId: Int? = null
 )
 
 

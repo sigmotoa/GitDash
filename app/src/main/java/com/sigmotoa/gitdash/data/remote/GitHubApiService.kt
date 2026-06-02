@@ -29,6 +29,12 @@ interface GitHubApiService {
         @Query("per_page") perPage: Int = 1
     ): Response<List<CommitResponse>>
 
+    @GET("repos/{owner}/{repo}/stats/contributors")
+    suspend fun getContributorStats(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<List<ContributorStatsResponse>>
+
     @GET("repos/{owner}/{repo}/branches")
     suspend fun getRepoBranches(
         @Path("owner") owner: String,
@@ -103,4 +109,32 @@ data class ReadmeResponse(
     val encoding: String,
     @SerialName("download_url")
     val downloadUrl: String? = null
+)
+
+@Serializable
+data class ContributorStatsResponse(
+    @SerialName("author")
+    val author: ContributorAuthor? = null,
+    @SerialName("total")
+    val total: Int = 0,
+    @SerialName("weeks")
+    val weeks: List<WeekStat> = emptyList()
+)
+
+@Serializable
+data class ContributorAuthor(
+    @SerialName("login")
+    val login: String = ""
+)
+
+@Serializable
+data class WeekStat(
+    @SerialName("w")
+    val weekTimestamp: Long = 0,   // Unix epoch seconds of the Sunday starting the week
+    @SerialName("a")
+    val additions: Int = 0,
+    @SerialName("d")
+    val deletions: Int = 0,
+    @SerialName("c")
+    val commits: Int = 0
 )

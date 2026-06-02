@@ -7,6 +7,8 @@ import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import com.sigmotoa.gitdash.data.remote.GitLabApiService
 import java.net.URLEncoder
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 /** Info about the most-recent push captured in the events window. */
 data class LastCommitInfo(
@@ -15,12 +17,21 @@ data class LastCommitInfo(
     val date: String            // ISO "yyyy-MM-dd"
 )
 
+/** One push event record retained for date-range filtering. */
+data class RawEventRecord(
+    val date: String,          // YYYY-MM-DD
+    val repoShortName: String, // e.g. "my-repo"
+    val repoFullName: String,  // "owner/my-repo" — empty for GitLab
+    val commitCount: Int
+)
+
 data class ContributionData(
     val dateMap: Map<String, Int>,
     val categoryCounts: Map<String, Int>,
-    val topPushedRepo: String? = null,                          // repo with most commits in window
-    val topReposByPushes: List<Pair<String, Int>> = emptyList(), // top 3 repos by actual commit count
-    val lastCommitInfo: LastCommitInfo? = null                  // most recent push in window
+    val topPushedRepo: String? = null,
+    val topReposByPushes: List<Pair<String, Int>> = emptyList(),
+    val lastCommitInfo: LastCommitInfo? = null,
+    val rawPushEvents: List<RawEventRecord> = emptyList()
 )
 
 private fun categorizeGitHubEvent(type: String): String = when (type) {
@@ -143,9 +154,9 @@ class UnifiedRepository(
         return try {
             val dateCount = mutableMapOf<String, Int>()
             val categoryCount = mutableMapOf<String, Int>()
-            val repoPushCount = mutableMapOf<String, Int>()   // key=short repo name, value=actual commit count
+            val repoPushCount = mutableMapOf<String, Int>()
+            val rawPushEvents = mutableListOf<RawEventRecord>()
 
-            // Captured from the first (newest) PushEvent seen in the window
             var lastPushDate: String? = null
             var lastPushRepoName: String? = null
             var lastPushRepoFull: String? = null
@@ -160,14 +171,13 @@ class UnifiedRepository(
                             dateCount[date] = (dateCount[date] ?: 0) + 1
                             val category = categorizeGitHubEvent(event.type)
                             if (event.type == "PushEvent") {
-                                // payload.size = number of commits in this push; fall back to 1
                                 val commitCount = (event.payload?.size ?: 0).let { if (it > 0) it else 1 }
                                 categoryCount[category] = (categoryCount[category] ?: 0) + commitCount
                                 val repoFullName = event.repo?.name ?: ""
                                 val repoName = repoFullName.substringAfterLast("/")
                                 if (repoName.isNotEmpty()) {
                                     repoPushCount[repoName] = (repoPushCount[repoName] ?: 0) + commitCount
-                                    // Events arrive newest-first; capture the very first PushEvent seen
+                                    rawPushEvents.add(RawEventRecord(date, repoName, repoFullName, commitCount))
                                     if (lastPushDate == null) {
                                         lastPushDate = date
                                         lastPushRepoName = repoName
@@ -190,6 +200,12 @@ class UnifiedRepository(
                             dateCount[date] = (dateCount[date] ?: 0) + 1
                             val category = categorizeGitLabEvent(event.actionName, event.targetType)
                             categoryCount[category] = (categoryCount[category] ?: 0) + 1
+                            if (category == "Commits") {
+                                val projectId = event.projectId?.toString() ?: ""
+                                if (projectId.isNotEmpty()) {
+                                    rawPushEvents.add(RawEventRecord(date, "project/$projectId", "", 1))
+                                }
+                            }
                         }
                         if (events.size < 100) break
                     }
@@ -205,10 +221,41 @@ class UnifiedRepository(
                 LastCommitInfo(lastPushRepoName!!, lastPushRepoFull ?: "", lastPushDate!!)
             else null
 
-            Result.success(ContributionData(dateCount, categoryCount, topPushedRepo, topReposByPushes, lastCommitInfo))
+            Result.success(ContributionData(dateCount, categoryCount, topPushedRepo, topReposByPushes, lastCommitInfo, rawPushEvents))
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /** Sums lines added (GitHub only) for [username] across [repoFullNames] within the date range. */
+    suspend fun getLinesAddedInRange(
+        username: String,
+        repoFullNames: List<String>,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        platform: Platform
+    ): Int {
+        if (platform != Platform.GITHUB) return 0
+        val startEpoch = startDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond()
+        val endEpoch   = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond()
+        val weekSecs   = 7L * 24 * 3600
+        var totalLines = 0
+
+        for (fullName in repoFullNames.take(5)) {
+            val parts = fullName.split("/")
+            if (parts.size != 2) continue
+            val (owner, repo) = parts
+            try {
+                val response = githubApiService.getContributorStats(owner, repo)
+                if (!response.isSuccessful || response.code() == 202) continue
+                val allStats = response.body() ?: continue
+                val userStat = allStats.find { it.author?.login.equals(username, ignoreCase = true) } ?: continue
+                totalLines += userStat.weeks
+                    .filter { w -> w.weekTimestamp < endEpoch && w.weekTimestamp + weekSecs > startEpoch }
+                    .sumOf { it.additions }
+            } catch (_: Exception) { /* skip repo on error */ }
+        }
+        return totalLines
     }
 
     suspend fun getReadme(owner: String, repoName: String, platform: Platform, repoId: Int? = null, defaultBranch: String? = null): Result<String> {
