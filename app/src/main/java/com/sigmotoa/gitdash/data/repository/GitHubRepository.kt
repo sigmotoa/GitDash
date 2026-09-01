@@ -3,7 +3,9 @@ package com.sigmotoa.gitdash.data.repository
 import android.util.Base64
 import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.GitHubUser
+import com.sigmotoa.gitdash.data.remote.CommitResponse
 import com.sigmotoa.gitdash.data.remote.GitHubApiService
+import io.ktor.client.call.body
 
 class GitHubRepository(private val apiService: GitHubApiService) {
 
@@ -29,14 +31,15 @@ class GitHubRepository(private val apiService: GitHubApiService) {
         return try {
             val response = apiService.getRepoCommits(owner, repo, perPage = 1)
             // Parse the Link header to get total count
-            val linkHeader = response.headers()["Link"]
+            val linkHeader = response.headers["Link"]
+            val bodySize = runCatching { response.body<List<CommitResponse>>().size }.getOrNull() ?: 0
             val count = if (linkHeader != null) {
                 // Extract last page number from Link header
                 val lastPageRegex = """page=(\d+)>; rel="last"""".toRegex()
                 val match = lastPageRegex.find(linkHeader)
-                match?.groupValues?.get(1)?.toInt() ?: response.body()?.size ?: 0
+                match?.groupValues?.get(1)?.toInt() ?: bodySize
             } else {
-                response.body()?.size ?: 0
+                bodySize
             }
             Result.success(count)
         } catch (e: Exception) {

@@ -4,8 +4,12 @@ import android.util.Base64
 import com.sigmotoa.gitdash.data.model.Platform
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.data.model.UnifiedUser
+import com.sigmotoa.gitdash.data.remote.CommitResponse
+import com.sigmotoa.gitdash.data.remote.ContributorStatsResponse
 import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import com.sigmotoa.gitdash.data.remote.GitLabApiService
+import io.ktor.client.call.body
+import io.ktor.http.isSuccess
 import java.net.URLEncoder
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -100,13 +104,14 @@ class UnifiedRepository(
             when (platform) {
                 Platform.GITHUB -> {
                     val response = githubApiService.getRepoCommits(owner, repoName, perPage = 1)
-                    val linkHeader = response.headers()["Link"]
+                    val linkHeader = response.headers["Link"]
+                    val bodySize = runCatching { response.body<List<CommitResponse>>().size }.getOrNull() ?: 0
                     val count = if (linkHeader != null) {
                         val lastPageRegex = """page=(\d+)>; rel="last"""".toRegex()
                         val match = lastPageRegex.find(linkHeader)
-                        match?.groupValues?.get(1)?.toInt() ?: response.body()?.size ?: 0
+                        match?.groupValues?.get(1)?.toInt() ?: bodySize
                     } else {
-                        response.body()?.size ?: 0
+                        bodySize
                     }
                     Result.success(count)
                 }
@@ -115,7 +120,7 @@ class UnifiedRepository(
                         Result.failure(Exception("Repository ID required for GitLab"))
                     } else {
                         val response = gitlabApiService.getProjectCommits(repoId, perPage = 1)
-                        val totalPages = response.headers()["X-Total-Pages"]?.toIntOrNull() ?: 0
+                        val totalPages = response.headers["X-Total-Pages"]?.toIntOrNull() ?: 0
                         Result.success(totalPages)
                     }
                 }
@@ -247,8 +252,8 @@ class UnifiedRepository(
             val (owner, repo) = parts
             try {
                 val response = githubApiService.getContributorStats(owner, repo)
-                if (!response.isSuccessful || response.code() == 202) continue
-                val allStats = response.body() ?: continue
+                if (!response.status.isSuccess() || response.status.value == 202) continue
+                val allStats = runCatching { response.body<List<ContributorStatsResponse>>() }.getOrNull() ?: continue
                 val userStat = allStats.find { it.author?.login.equals(username, ignoreCase = true) } ?: continue
                 totalLines += userStat.weeks
                     .filter { w -> w.weekTimestamp < endEpoch && w.weekTimestamp + weekSecs > startEpoch }

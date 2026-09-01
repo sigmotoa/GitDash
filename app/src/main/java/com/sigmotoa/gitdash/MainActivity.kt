@@ -23,7 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sigmotoa.gitdash.ads.InterstitialAdManager
-import com.sigmotoa.gitdash.data.remote.RetrofitInstance
+import com.sigmotoa.gitdash.data.remote.ApiClient
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
 import com.sigmotoa.gitdash.ui.components.UpdateDialog
@@ -65,10 +65,10 @@ class MainActivity : ComponentActivity() {
         interstitialAdManager = InterstitialAdManager(this)
 
         // Initialize Version Check Manager
-        versionCheckManager = VersionCheckManager(this, RetrofitInstance.versionCheckApi)
+        versionCheckManager = VersionCheckManager(this, ApiClient.versionCheck)
 
-        val repository = GitHubRepository(RetrofitInstance.api)
-        val unifiedRepository = UnifiedRepository(RetrofitInstance.api, RetrofitInstance.gitlabApi)
+        val repository = GitHubRepository(ApiClient.gitHub)
+        val unifiedRepository = UnifiedRepository(ApiClient.gitHub, ApiClient.gitLab)
         val viewModel = GitHubViewModel(repository, unifiedRepository)
 
         // Check for updates
