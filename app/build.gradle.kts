@@ -83,12 +83,6 @@ kotlin {
                 // Ktor engine para Android
                 implementation(libs.ktor.client.okhttp)
 
-                // Retrofit / OkHttp — NO son KMP.
-                // TODO(KMP): eliminar cuando data/remote/* esté migrado a Ktor (HttpClient en commonMain).
-                implementation(libs.retrofit)
-                implementation(libs.retrofit.converter.kotlinx.serialization)
-                implementation(libs.okhttp.logging)
-
                 // Coil (UI en Compose Android por ahora); engine de red vía Ktor
                 implementation(libs.coil.compose)
                 implementation(libs.coil.network.ktor3)

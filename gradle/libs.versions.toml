@@ -8,8 +8,6 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
 composeBom = "2024.09.00"
-retrofit = "2.11.0"
-okhttp = "4.12.0"
 coil = "3.0.4"
 viewmodelCompose = "2.9.4"
 kotlinxSerializationJson = "1.7.3"
@@ -42,13 +40,7 @@ kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.re
 # (kotlin.plugin.compose) se aplica a TODOS los targets, iOS incluido.
 compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", version.ref = "composeMultiplatform" }
 
-# Retrofit + OkHttp — JVM/Android only, NOT KMP-compatible.
-# TODO(KMP): eliminar cuando la capa de red (data/remote) esté migrada a Ktor.
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
-okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
-
-# Ktor Client — reemplazo multiplataforma de Retrofit/OkHttp
+# Ktor Client — capa de red multiplataforma (reemplazó a Retrofit/OkHttp)
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
