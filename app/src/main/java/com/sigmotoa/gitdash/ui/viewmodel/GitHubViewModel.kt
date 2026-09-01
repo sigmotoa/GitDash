@@ -10,7 +10,6 @@ import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.repository.ContributionData
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
-import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -106,8 +105,8 @@ class GitHubViewModel(
     suspend fun getLinesAddedInRange(
         username: String,
         repos: List<String>,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startEpochSeconds: Long,
+        endEpochSeconds: Long,
         platform: Platform
-    ): Int = unifiedRepository.getLinesAddedInRange(username, repos, startDate, endDate, platform)
+    ): Int = unifiedRepository.getLinesAddedInRange(username, repos, startEpochSeconds, endEpochSeconds, platform)
 }

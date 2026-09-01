@@ -43,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -207,7 +208,11 @@ fun ProfileScreen(
 
                     val linesAdded = withContext(Dispatchers.IO) {
                         viewModel.getLinesAddedInRange(
-                            currentUser.username, reposInRange, startDate, endDate, currentUser.platform
+                            currentUser.username,
+                            reposInRange,
+                            startDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond(),
+                            endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond(),
+                            currentUser.platform
                         )
                     }
 

@@ -1,6 +1,5 @@
 package com.sigmotoa.gitdash.data.repository
 
-import android.util.Base64
 import com.sigmotoa.gitdash.data.model.Platform
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.data.model.UnifiedUser
@@ -10,9 +9,8 @@ import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import com.sigmotoa.gitdash.data.remote.GitLabApiService
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
-import java.net.URLEncoder
-import java.time.LocalDate
-import java.time.ZoneOffset
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /** Info about the most-recent push captured in the events window. */
 data class LastCommitInfo(
@@ -232,17 +230,20 @@ class UnifiedRepository(
         }
     }
 
-    /** Sums lines added (GitHub only) for [username] across [repoFullNames] within the date range. */
+    /**
+     * Sums lines added (GitHub only) for [username] across [repoFullNames] within the window
+     * [[startEpochSeconds], [endEpochSeconds]) (both in seconds since the Unix epoch, UTC).
+     */
     suspend fun getLinesAddedInRange(
         username: String,
         repoFullNames: List<String>,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startEpochSeconds: Long,
+        endEpochSeconds: Long,
         platform: Platform
     ): Int {
         if (platform != Platform.GITHUB) return 0
-        val startEpoch = startDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond()
-        val endEpoch   = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond()
+        val startEpoch = startEpochSeconds
+        val endEpoch   = endEpochSeconds
         val weekSecs   = 7L * 24 * 3600
         var totalLines = 0
 
@@ -263,6 +264,7 @@ class UnifiedRepository(
         return totalLines
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     suspend fun getReadme(owner: String, repoName: String, platform: Platform, repoId: Int? = null, defaultBranch: String? = null): Result<String> {
         return try {
             when (platform) {
@@ -270,7 +272,7 @@ class UnifiedRepository(
                     val readmeResponse = githubApiService.getRepoReadme(owner, repoName)
                     val decodedContent = if (readmeResponse.encoding == "base64") {
                         val cleanContent = readmeResponse.content.replace("\n", "")
-                        String(Base64.decode(cleanContent, Base64.DEFAULT))
+                        Base64.decode(cleanContent).decodeToString()
                     } else {
                         readmeResponse.content
                     }
@@ -285,7 +287,7 @@ class UnifiedRepository(
                             val readmeResponse = gitlabApiService.getProjectReadme(repoId, branch)
                             val decodedContent = if (readmeResponse.encoding == "base64") {
                                 val cleanContent = readmeResponse.content.replace("\n", "")
-                                String(Base64.decode(cleanContent, Base64.DEFAULT))
+                                Base64.decode(cleanContent).decodeToString()
                             } else {
                                 readmeResponse.content
                             }
@@ -296,7 +298,7 @@ class UnifiedRepository(
                                 val readmeResponse = gitlabApiService.getProjectReadme(repoId, "master")
                                 val decodedContent = if (readmeResponse.encoding == "base64") {
                                     val cleanContent = readmeResponse.content.replace("\n", "")
-                                    String(Base64.decode(cleanContent, Base64.DEFAULT))
+                                    Base64.decode(cleanContent).decodeToString()
                                 } else {
                                     readmeResponse.content
                                 }

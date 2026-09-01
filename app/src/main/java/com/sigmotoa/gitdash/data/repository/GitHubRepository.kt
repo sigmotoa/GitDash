@@ -1,11 +1,12 @@
 package com.sigmotoa.gitdash.data.repository
 
-import android.util.Base64
 import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.remote.CommitResponse
 import com.sigmotoa.gitdash.data.remote.GitHubApiService
 import io.ktor.client.call.body
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 class GitHubRepository(private val apiService: GitHubApiService) {
 
@@ -56,13 +57,14 @@ class GitHubRepository(private val apiService: GitHubApiService) {
         }
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     suspend fun getReadme(owner: String, repo: String): Result<String> {
         return try {
             val readmeResponse = apiService.getRepoReadme(owner, repo)
             // Decode base64 content
             val decodedContent = if (readmeResponse.encoding == "base64") {
                 val cleanContent = readmeResponse.content.replace("\n", "")
-                String(Base64.decode(cleanContent, Base64.DEFAULT))
+                Base64.decode(cleanContent).decodeToString()
             } else {
                 readmeResponse.content
             }
