@@ -11,6 +11,7 @@ composeBom = "2024.09.00"
 coil = "3.0.4"
 kotlinxSerializationJson = "1.7.3"
 kotlinxCoroutines = "1.9.0"
+kotlinxDatetime = "0.6.1"
 ktor = "3.0.3"
 composeMultiplatform = "1.7.3"
 navigationCompose = "2.9.4"
@@ -48,6 +49,9 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Kotlinx Coroutines — el artefacto -core es multiplataforma (va en commonMain)
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+
+# Kotlinx DateTime — reemplazo multiplataforma de java.time
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 # Coil 3 — multiplataforma. El engine de red pasa de OkHttp a Ktor.
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }

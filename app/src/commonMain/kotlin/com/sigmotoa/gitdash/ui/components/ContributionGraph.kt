@@ -15,12 +15,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 
 private const val WEEKS = 18
 private val GAP = 2.dp
+
+// java.time daba nombres de mes localizados; kotlinx-datetime no, así que se fija ES/EN corto.
+private val MONTH_ABBR = listOf(
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
 
 // Day-of-week labels: Sun(0)..Sat(6) — show label only on odd rows to save space
 private val DAY_ROW_LABELS = listOf("S", "", "T", "", "T", "", "S")
@@ -34,19 +44,19 @@ fun ContributionGraph(
     categoryCounts: Map<String, Int> = emptyMap(),
     modifier: Modifier = Modifier
 ) {
-    val today = LocalDate.now()
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
-    // Align to the Sunday of the current week (DayOfWeek values: Mon=1..Sun=7)
-    val currentSunday = today.minusDays(today.dayOfWeek.value.toLong() % 7)
-    val startSunday = currentSunday.minusWeeks((WEEKS - 1).toLong())
+    // Align to the Sunday of the current week (isoDayNumber: Mon=1..Sun=7)
+    val currentSunday = today.minus(today.dayOfWeek.isoDayNumber % 7, DateTimeUnit.DAY)
+    val startSunday = currentSunday.minus(WEEKS - 1, DateTimeUnit.WEEK)
 
     // Build a list of weeks, each containing 7 (date, count) pairs.
     // count == -1 means the date is in the future — rendered transparent.
     val weeks: List<List<Pair<LocalDate, Int>>> = (0 until WEEKS).map { weekIndex ->
-        val weekStart = startSunday.plusWeeks(weekIndex.toLong())
+        val weekStart = startSunday.plus(weekIndex, DateTimeUnit.WEEK)
         (0..6).map { day ->
-            val date = weekStart.plusDays(day.toLong())
-            date to if (!date.isAfter(today)) (contributionMap[date.toString()] ?: 0) else -1
+            val date = weekStart.plus(day, DateTimeUnit.DAY)
+            date to if (date <= today) (contributionMap[date.toString()] ?: 0) else -1
         }
     }
 
@@ -55,9 +65,9 @@ fun ContributionGraph(
         var lastMonth = -1
         weeks.forEachIndexed { idx, week ->
             val first = week.firstOrNull { (_, c) -> c >= 0 }?.first ?: return@forEachIndexed
-            if (first.monthValue != lastMonth) {
-                put(idx, first.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()))
-                lastMonth = first.monthValue
+            if (first.monthNumber != lastMonth) {
+                put(idx, MONTH_ABBR[first.monthNumber - 1])
+                lastMonth = first.monthNumber
             }
         }
     }

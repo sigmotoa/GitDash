@@ -47,6 +47,8 @@ kotlin {
             implementation(compose.animation)
             // Coroutines — el artefacto -core es multiplataforma
             implementation(libs.kotlinx.coroutines.core)
+            // DateTime — reemplazo multiplataforma de java.time
+            implementation(libs.kotlinx.datetime)
             // Serialization — ya es KMP
             implementation(libs.kotlinx.serialization.json)
             // Ktor Client — reemplazo multiplataforma de Retrofit
