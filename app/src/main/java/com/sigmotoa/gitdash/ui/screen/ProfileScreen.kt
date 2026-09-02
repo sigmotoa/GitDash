@@ -1,7 +1,6 @@
 package com.sigmotoa.gitdash.ui.screen
 
 import android.app.Activity
-import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +18,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -36,8 +34,9 @@ import com.sigmotoa.gitdash.data.repository.RawEventRecord
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
-import com.sigmotoa.gitdash.ui.util.DiffReportGenerator
-import com.sigmotoa.gitdash.ui.util.ProfileReportGenerator
+import com.sigmotoa.gitdash.ui.platform.rememberFileSharer
+import com.sigmotoa.gitdash.ui.platform.sharePdf
+import com.sigmotoa.gitdash.ui.report.ReportGenerator
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,6 +55,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
+    val fileSharer = rememberFileSharer()
 
     var contributionMap      by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var categoryCounts       by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
@@ -109,9 +109,8 @@ fun ProfileScreen(
         if (currentUser != null) {
             scope.launch(Dispatchers.Main) {
                 try {
-                    val file = withContext(Dispatchers.IO) {
-                        ProfileReportGenerator.generate(
-                            context          = context,
+                    val pdf = withContext(Dispatchers.IO) {
+                        ReportGenerator.profileReport(
                             user             = currentUser,
                             repos            = uiState.unifiedRepos,
                             categoryCounts   = categoryCounts,
@@ -120,23 +119,9 @@ fun ProfileScreen(
                             lastCommitInfo   = lastCommitInfo
                         )
                     }
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/pdf"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(
-                            Intent.EXTRA_SUBJECT,
-                            "GitDash Profile Report - @${currentUser.username}"
-                        )
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    if (pdf != null) {
+                        fileSharer.sharePdf(pdf, "GitDash-Profile-${currentUser.username}.pdf")
                     }
-                    context.startActivity(
-                        Intent.createChooser(shareIntent, "Share Profile Report")
-                    )
                 } finally {
                     isGeneratingReport = false
                 }
@@ -217,32 +202,22 @@ fun ProfileScreen(
                         )
                     }
 
-                    val file = withContext(Dispatchers.IO) {
-                        DiffReportGenerator.generate(
-                            context       = context,
+                    val pdf = withContext(Dispatchers.IO) {
+                        ReportGenerator.diffReport(
                             user          = currentUser,
                             repos         = uiState.unifiedRepos,
                             rawPushEvents = rawPushEvents,
-                            startDate     = startDate,
-                            endDate       = endDate,
+                            startDateIso  = startDate.toString(),
+                            endDateIso    = endDate.toString(),
                             linesAdded    = linesAdded
                         )
                     }
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/pdf"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(
-                            Intent.EXTRA_SUBJECT,
-                            "GitDash Activity Report - @${currentUser.username} ($startDate to $endDate)"
+                    if (pdf != null) {
+                        fileSharer.sharePdf(
+                            pdf,
+                            "GitDash-Activity-${currentUser.username}-${startDate}_$endDate.pdf",
                         )
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share Activity Report"))
                 } finally {
                     isGeneratingReport = false
                 }

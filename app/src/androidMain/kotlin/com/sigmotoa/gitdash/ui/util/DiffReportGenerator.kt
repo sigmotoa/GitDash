@@ -1,6 +1,5 @@
 package com.sigmotoa.gitdash.ui.util
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -14,7 +13,7 @@ import android.graphics.pdf.PdfDocument
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.repository.RawEventRecord
-import java.io.File
+import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -40,14 +39,13 @@ object DiffReportGenerator {
     private val C_WHITE   = Color.WHITE
 
     fun generate(
-        context: Context,
         user: UnifiedUser,
         repos: List<UnifiedRepo>,
         rawPushEvents: List<RawEventRecord>,
         startDate: LocalDate,
         endDate: LocalDate,
         linesAdded: Int = 0
-    ): File {
+    ): ByteArray {
         val startStr = startDate.toString()
         val endStr   = endDate.toString()
 
@@ -116,12 +114,13 @@ object DiffReportGenerator {
 
         pdf.finishPage(page)
 
-        val dir  = File(context.cacheDir, "reports").also { it.mkdirs() }
-        val file = File(dir, "gitdash_diff_${user.username}_${startDate}_${endDate}.pdf")
-        file.outputStream().use { pdf.writeTo(it) }
+        val bytes = ByteArrayOutputStream().use { out ->
+            pdf.writeTo(out)
+            out.toByteArray()
+        }
         pdf.close()
         avatarBitmap?.recycle()
-        return file
+        return bytes
     }
 
     @Suppress("LongParameterList")

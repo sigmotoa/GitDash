@@ -1,6 +1,5 @@
 package com.sigmotoa.gitdash.ui.util
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -14,7 +13,7 @@ import android.graphics.pdf.PdfDocument
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.repository.LastCommitInfo
-import java.io.File
+import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -48,14 +47,13 @@ object ProfileReportGenerator {
     // ── Public entry point ─────────────────────────────────────────────────
 
     fun generate(
-        context: Context,
         user: UnifiedUser,
         repos: List<UnifiedRepo>,
         categoryCounts: Map<String, Int>,
         dateMap: Map<String, Int>,
         topReposByPushes: List<Pair<String, Int>>,
         lastCommitInfo: LastCommitInfo?
-    ): File {
+    ): ByteArray {
         val totalStars     = repos.sumOf { it.starCount }
         val commits        = categoryCounts["Commits"] ?: 0
         val topLanguages   = repos
@@ -104,12 +102,13 @@ object ProfileReportGenerator {
         )
         pdf.finishPage(page)
 
-        val dir  = File(context.cacheDir, "reports").also { it.mkdirs() }
-        val file = File(dir, "gitdash_report_${user.username}.pdf")
-        file.outputStream().use { pdf.writeTo(it) }
+        val bytes = ByteArrayOutputStream().use { out ->
+            pdf.writeTo(out)
+            out.toByteArray()
+        }
         pdf.close()
         avatarBitmap?.recycle()
-        return file
+        return bytes
     }
 
     // ── Drawing ────────────────────────────────────────────────────────────
