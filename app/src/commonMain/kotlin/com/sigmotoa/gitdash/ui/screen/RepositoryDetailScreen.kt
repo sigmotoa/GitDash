@@ -1,7 +1,5 @@
 package com.sigmotoa.gitdash.ui.screen
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,10 +26,9 @@ import com.sigmotoa.gitdash.data.model.GitHubRepo
 import com.sigmotoa.gitdash.data.model.UnifiedRepo
 import com.sigmotoa.gitdash.ui.components.MarkdownText
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
+import com.sigmotoa.gitdash.ui.utils.isoInstantToMediumDate
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +49,7 @@ fun RepositoryDetailScreen(
     var isLoadingReadme by remember { mutableStateOf(false) }
     var readmeError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(repo) {
         if (repo != null) {
@@ -238,7 +235,7 @@ fun RepositoryDetailScreen(
                             DetailRow(
                                 icon = Icons.Default.CalendarToday,
                                 label = "Created",
-                                value = formatDate(repo.createdAt)
+                                value = isoInstantToMediumDate(repo.createdAt)
                             )
                         }
 
@@ -398,10 +395,9 @@ fun RepositoryDetailScreen(
                         // Register click for ad tracking
                         onUserInteraction()
                         try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(repo.htmlUrl))
-                            context.startActivity(intent)
+                            uriHandler.openUri(repo.htmlUrl)
                         } catch (e: Exception) {
-                            // Handle error silently or show a toast
+                            // Handle error silently
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -531,17 +527,5 @@ private fun DetailRow(
                 )
             }
         }
-    }
-}
-
-private fun formatDate(dateString: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-        val date = inputFormat.parse(dateString)
-        val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        date?.let { outputFormat.format(it) } ?: dateString
-    } catch (e: Exception) {
-        dateString
     }
 }

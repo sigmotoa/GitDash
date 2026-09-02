@@ -1,7 +1,5 @@
 package com.sigmotoa.gitdash.ui.components
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
@@ -9,17 +7,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sigmotoa.gitdash.version.VersionUpdateInfo
+
+private const val PLAY_STORE_URL =
+    "https://play.google.com/store/apps/details?id=com.sigmotoa.gitdash"
 
 @Composable
 fun UpdateDialog(
     updateInfo: VersionUpdateInfo,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     AlertDialog(
         onDismissRequest = {
@@ -134,10 +135,7 @@ fun UpdateDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val url = updateInfo.downloadUrl
-                        ?: "https://play.google.com/store/apps/details?id=${context.packageName}"
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    context.startActivity(intent)
+                    uriHandler.openUri(updateInfo.downloadUrl ?: PLAY_STORE_URL)
 
                     if (!updateInfo.isMandatory) {
                         onDismiss()

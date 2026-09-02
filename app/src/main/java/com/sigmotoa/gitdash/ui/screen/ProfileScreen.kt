@@ -42,6 +42,7 @@ import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -298,8 +299,11 @@ fun ProfileScreen(
             DateRangeReportDialog(
                 username  = currentUser.username,
                 onDismiss = { showDateRangeDialog = false },
-                onGenerate = { startDate, endDate ->
-                    generateAndShareDiffReport(startDate, endDate)
+                onGenerate = { startMillis, endMillis ->
+                    generateAndShareDiffReport(
+                        Instant.ofEpochMilli(startMillis).atZone(ZoneOffset.UTC).toLocalDate(),
+                        Instant.ofEpochMilli(endMillis).atZone(ZoneOffset.UTC).toLocalDate(),
+                    )
                 }
             )
         }

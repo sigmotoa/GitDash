@@ -9,23 +9,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 /**
  * Full-screen dialog for selecting a date range.
  *
- * [onGenerate] is a plain (non-suspend) callback invoked when the user taps
- * "Generate" with a valid range. The caller is responsible for showing the
- * rewarded interstitial and then generating the PDF.
+ * [onGenerate] receives the selected start/end as UTC-midnight epoch millis
+ * (exactly what the Material date-range picker produces). The caller is
+ * responsible for showing the rewarded interstitial and generating the PDF.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangeReportDialog(
     username: String,
     onDismiss: () -> Unit,
-    onGenerate: (LocalDate, LocalDate) -> Unit
+    onGenerate: (startMillis: Long, endMillis: Long) -> Unit
 ) {
     val rangeState  = rememberDateRangePickerState()
 
@@ -63,11 +60,7 @@ fun DateRangeReportDialog(
                         TextButton(
                             onClick = {
                                 if (startMillis != null && endMillis != null) {
-                                    val start = Instant.ofEpochMilli(startMillis)
-                                        .atZone(ZoneOffset.UTC).toLocalDate()
-                                    val end   = Instant.ofEpochMilli(endMillis)
-                                        .atZone(ZoneOffset.UTC).toLocalDate()
-                                    onGenerate(start, end)
+                                    onGenerate(startMillis, endMillis)
                                 }
                             },
                             enabled = canGenerate
