@@ -28,6 +28,7 @@ import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
 import com.sigmotoa.gitdash.ui.components.UpdateDialog
 import com.sigmotoa.gitdash.ui.screen.ProfileScreen
+import com.sigmotoa.gitdash.platform.PlatformInfo
 import com.sigmotoa.gitdash.version.VersionCheckManager
 import com.sigmotoa.gitdash.version.VersionUpdateInfo
 import androidx.compose.runtime.mutableStateOf
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
         interstitialAdManager = InterstitialAdManager(this)
 
         // Initialize Version Check Manager
-        versionCheckManager = VersionCheckManager(this, ApiClient.versionCheck)
+        versionCheckManager = VersionCheckManager(PlatformInfo(this), ApiClient.versionCheck)
 
         val repository = GitHubRepository(ApiClient.gitHub)
         val unifiedRepository = UnifiedRepository(ApiClient.gitHub, ApiClient.gitLab)
