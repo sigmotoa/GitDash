@@ -112,9 +112,7 @@ fun ProfileScreen(
                             lastCommitInfo   = lastCommitInfo
                         )
                     }
-                    if (pdf != null) {
-                        fileSharer.sharePdf(pdf, "GitDash-Profile-${currentUser.username}.pdf")
-                    }
+                    fileSharer.sharePdf(pdf, "GitDash-Profile-${currentUser.username}.pdf")
                 } finally {
                     isGeneratingReport = false
                 }
@@ -178,12 +176,10 @@ fun ProfileScreen(
                             linesAdded    = linesAdded
                         )
                     }
-                    if (pdf != null) {
-                        fileSharer.sharePdf(
-                            pdf,
-                            "GitDash-Activity-${currentUser.username}-${startIso}_$endIso.pdf",
-                        )
-                    }
+                    fileSharer.sharePdf(
+                        pdf,
+                        "GitDash-Activity-${currentUser.username}-${startIso}_$endIso.pdf",
+                    )
                 } finally {
                     isGeneratingReport = false
                 }
