@@ -1,4 +1,5 @@
 import UIKit
+import AppTrackingTransparency
 import GoogleMobileAds
 import GitDashKit
 
@@ -6,6 +7,14 @@ import GitDashKit
 private enum AdUnits {
     static let banner = "ca-app-pub-3940256099942544/2501205051"
     static let rewardedInterstitial = "ca-app-pub-3940256099942544/3980089055"
+}
+
+private func requestTrackingWhenReady() {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        if #available(iOS 14, *) {
+            ATTrackingManager.requestTrackingAuthorization { _ in }
+        }
+    }
 }
 
 private var currentRootVC: UIViewController? {
@@ -18,6 +27,9 @@ private var currentRootVC: UIViewController? {
 /// Se llama una vez al arrancar (`iOSApp.init`). Inicializa el SDK y conecta las
 /// fábricas que el código Kotlin usa para el banner y el anuncio recompensado.
 func installAds() {
+    // El SDK se puede iniciar de inmediato; el prompt de App Tracking
+    // Transparency se pide en cuanto la app está activa.
+    requestTrackingWhenReady()
     GADMobileAds.sharedInstance().start(completionHandler: nil)
 
     IosAdBridge.shared.bannerFactory = {
