@@ -17,3 +17,10 @@ local.properties
 
 CLAUDE.md
 /app/release/*
+
+# Xcode / iosApp
+xcuserdata/
+*.xcworkspace/xcuserdata/
+/iosApp/build/
+/iosApp/Pods/
+/iosApp/*.xcworkspace/xcshareddata/swiftpm/

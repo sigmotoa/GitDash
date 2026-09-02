@@ -1,0 +1,4 @@
+// Ajusta estos valores. TEAM_ID es tu Apple Developer Team ID (10 caracteres).
+TEAM_ID=
+BUNDLE_ID=com.sigmotoa.gitdash
+APP_NAME=GitDash
