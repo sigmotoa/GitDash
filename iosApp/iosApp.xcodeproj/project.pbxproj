@@ -10,10 +10,13 @@
 		1A1A1A1A1A1A1A1A1A1A1A13 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A0E /* iOSApp.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A0F /* ContentView.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */; };
+		1A1A1A1A1A1A1A1A1A1A1A21 /* Ads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A20 /* Ads.swift */; };
+		1A1A1A1A1A1A1A1A1A1A1A23 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 1A1A1A1A1A1A1A1A1A1A1A25 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1A1A1A1A1A1A1A1A1A1A1A0D /* GitDash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitDash.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A1A1A1A1A1A1A1A1A1A1A20 /* Ads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ads.swift; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A0E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A0F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -26,6 +29,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A1A1A1A1A1A1A1A1A1A1A23 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +50,7 @@
 			children = (
 				1A1A1A1A1A1A1A1A1A1A1A0E /* iOSApp.swift */,
 				1A1A1A1A1A1A1A1A1A1A1A0F /* ContentView.swift */,
+				1A1A1A1A1A1A1A1A1A1A1A20 /* Ads.swift */,
 				1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */,
 				1A1A1A1A1A1A1A1A1A1A1A11 /* Info.plist */,
 			);
@@ -85,6 +90,9 @@
 			dependencies = (
 			);
 			name = iosApp;
+			packageProductDependencies = (
+				1A1A1A1A1A1A1A1A1A1A1A25 /* GoogleMobileAds */,
+			);
 			productName = iosApp;
 			productReference = 1A1A1A1A1A1A1A1A1A1A1A0D /* GitDash.app */;
 			productType = "com.apple.product-type.application";
@@ -113,6 +121,9 @@
 				Base,
 			);
 			mainGroup = 1A1A1A1A1A1A1A1A1A1A1A09;
+			packageReferences = (
+				1A1A1A1A1A1A1A1A1A1A1A24 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			productRefGroup = 1A1A1A1A1A1A1A1A1A1A1A0B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -157,6 +168,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A1A1A1A1A1A1A1A1A1A1A14 /* ContentView.swift in Sources */,
+				1A1A1A1A1A1A1A1A1A1A1A21 /* Ads.swift in Sources */,
 				1A1A1A1A1A1A1A1A1A1A1A13 /* iOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -272,6 +284,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1A1A1A1A1A1A1A1A1A1A1A24 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1A1A1A1A1A1A1A1A1A1A1A25 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A1A1A1A1A1A1A1A1A1A1A24 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1A1A1A1A1A1A1A1A1A1A1A01 /* Project object */;
 }
