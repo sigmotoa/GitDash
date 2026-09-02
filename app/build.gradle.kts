@@ -66,6 +66,8 @@ kotlin {
             // Coil 3 — carga de imágenes multiplataforma
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor3)
+            // Navigation Compose multiplataforma
+            implementation(libs.androidx.navigation.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -88,9 +90,6 @@ kotlin {
                 implementation(libs.androidx.ui.graphics)
                 implementation(libs.androidx.ui.tooling.preview)
                 implementation(libs.androidx.material3)
-
-                // Navigation
-                implementation(libs.androidx.navigation.compose)
 
                 // Ktor engine para Android
                 implementation(libs.ktor.client.okhttp)
