@@ -2,6 +2,7 @@ package com.sigmotoa.gitdash.ui.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -15,7 +16,7 @@ import platform.Foundation.writeToURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
 actual fun rememberFileSharer(): FileSharer = remember {
     FileSharer { bytes, fileName, _ ->
