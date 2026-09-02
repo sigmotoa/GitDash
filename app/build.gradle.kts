@@ -63,6 +63,9 @@ kotlin {
             // Markdown — renderer multiplataforma (antes Markwon, Android/TextView)
             implementation(libs.markdown.renderer.m3)
             implementation(libs.markdown.renderer.coil3)
+            // Coil 3 — carga de imágenes multiplataforma
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -91,10 +94,6 @@ kotlin {
 
                 // Ktor engine para Android
                 implementation(libs.ktor.client.okhttp)
-
-                // Coil (UI en Compose Android por ahora); engine de red vía Ktor
-                implementation(libs.coil.compose)
-                implementation(libs.coil.network.ktor3)
             }
         }
 

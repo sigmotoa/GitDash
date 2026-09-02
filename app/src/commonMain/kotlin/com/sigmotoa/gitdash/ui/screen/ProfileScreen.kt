@@ -1,6 +1,5 @@
 package com.sigmotoa.gitdash.ui.screen
 
-import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -15,17 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
-import com.sigmotoa.gitdash.BuildConfig
 import coil3.compose.AsyncImage
 import com.sigmotoa.gitdash.data.model.GitHubUser
 import com.sigmotoa.gitdash.data.model.UnifiedUser
@@ -34,16 +25,18 @@ import com.sigmotoa.gitdash.data.repository.RawEventRecord
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
+import com.sigmotoa.gitdash.ui.platform.ioDispatcher
 import com.sigmotoa.gitdash.ui.platform.rememberFileSharer
+import com.sigmotoa.gitdash.ui.platform.rememberRewardedAdController
 import com.sigmotoa.gitdash.ui.platform.sharePdf
 import com.sigmotoa.gitdash.ui.report.ReportGenerator
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,9 +46,9 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     val scope   = rememberCoroutineScope()
     val fileSharer = rememberFileSharer()
+    val rewardedAd = rememberRewardedAdController()
 
     var contributionMap      by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var categoryCounts       by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
@@ -109,7 +102,7 @@ fun ProfileScreen(
         if (currentUser != null) {
             scope.launch(Dispatchers.Main) {
                 try {
-                    val pdf = withContext(Dispatchers.IO) {
+                    val pdf = withContext(ioDispatcher) {
                         ReportGenerator.profileReport(
                             user             = currentUser,
                             repos            = uiState.unifiedRepos,
@@ -131,59 +124,32 @@ fun ProfileScreen(
         }
     }
 
-    // Entry point: show rewarded interstitial first; PDF is the reward.
+    // Entry point: show rewarded ad first; the PDF is the reward.
     val generateAndShareReport = {
         val user = uiState.unifiedUser
         if (user != null && !isGeneratingReport) {
             isGeneratingReport = true
-            val activity = context as? Activity
-
-            RewardedInterstitialAd.load(
-                context,
-                BuildConfig.AD_UNIT_REWARDED,
-                AdRequest.Builder().build(),
-                object : RewardedInterstitialAdLoadCallback() {
-
-                    override fun onAdLoaded(ad: RewardedInterstitialAd) {
-                        // If we can't obtain an Activity reference, fall through to PDF
-                        if (activity == null) { doSharePdf(); return }
-
-                        var rewardEarned = false
-                        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                            // User closed the ad before earning the reward
-                            override fun onAdDismissedFullScreenContent() {
-                                if (!rewardEarned) isGeneratingReport = false
-                            }
-                            // Ad couldn't display — fall through to PDF
-                            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                                doSharePdf()
-                            }
-                        }
-
-                        // Show ad; PDF is generated when the reward is earned
-                        ad.show(activity) { _ ->
-                            rewardEarned = true
-                            doSharePdf()
-                        }
-                    }
-
-                    // Ad network unavailable — fall through to PDF
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        doSharePdf()
-                    }
-                }
+            rewardedAd.show(
+                onReward    = { doSharePdf() },
+                onCancelled = { isGeneratingReport = false },
             )
         }
     }
 
     // ── Date-range diff report: PDF generation (the reward action) ─────────
-    val doShareDiffPdf: (LocalDate, LocalDate) -> Unit = { startDate, endDate ->
+    // start/end are UTC-midnight epoch millis, straight from the date-range picker.
+    val doShareDiffPdf: (Long, Long) -> Unit = { startMillis, endMillis ->
         val currentUser = uiState.unifiedUser
         if (currentUser != null) {
             scope.launch(Dispatchers.Main) {
                 try {
+                    val startIso = Instant.fromEpochMilliseconds(startMillis)
+                        .toLocalDateTime(TimeZone.UTC).date.toString()
+                    val endIso = Instant.fromEpochMilliseconds(endMillis)
+                        .toLocalDateTime(TimeZone.UTC).date.toString()
+
                     val reposInRange = rawPushEvents
-                        .filter { it.date >= startDate.toString() && it.date <= endDate.toString() }
+                        .filter { it.date in startIso..endIso }
                         .groupBy { it.repoFullName }
                         .mapValues { (_, list) -> list.sumOf { it.commitCount } }
                         .entries
@@ -192,30 +158,30 @@ fun ProfileScreen(
                         .map { it.key }
                         .filter { it.isNotEmpty() }
 
-                    val linesAdded = withContext(Dispatchers.IO) {
+                    val linesAdded = withContext(ioDispatcher) {
                         viewModel.getLinesAddedInRange(
                             currentUser.username,
                             reposInRange,
-                            startDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond(),
-                            endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toEpochSecond(),
+                            startMillis / 1000,
+                            endMillis / 1000 + 86_400,   // end date + 1 day (exclusive)
                             currentUser.platform
                         )
                     }
 
-                    val pdf = withContext(Dispatchers.IO) {
+                    val pdf = withContext(ioDispatcher) {
                         ReportGenerator.diffReport(
                             user          = currentUser,
                             repos         = uiState.unifiedRepos,
                             rawPushEvents = rawPushEvents,
-                            startDateIso  = startDate.toString(),
-                            endDateIso    = endDate.toString(),
+                            startDateIso  = startIso,
+                            endDateIso    = endIso,
                             linesAdded    = linesAdded
                         )
                     }
                     if (pdf != null) {
                         fileSharer.sharePdf(
                             pdf,
-                            "GitDash-Activity-${currentUser.username}-${startDate}_$endDate.pdf",
+                            "GitDash-Activity-${currentUser.username}-${startIso}_$endIso.pdf",
                         )
                     }
                 } finally {
@@ -227,42 +193,15 @@ fun ProfileScreen(
         }
     }
 
-    // Entry point for diff report: rewarded interstitial → PDF as reward.
-    val generateAndShareDiffReport: (LocalDate, LocalDate) -> Unit = { startDate, endDate ->
+    // Entry point for diff report: rewarded ad → PDF as reward.
+    val generateAndShareDiffReport: (Long, Long) -> Unit = { startMillis, endMillis ->
         val user = uiState.unifiedUser
         if (user != null && !isGeneratingReport) {
             isGeneratingReport   = true
             showDateRangeDialog  = false
-            val activity = context as? Activity
-
-            RewardedInterstitialAd.load(
-                context,
-                BuildConfig.AD_UNIT_REWARDED,
-                AdRequest.Builder().build(),
-                object : RewardedInterstitialAdLoadCallback() {
-
-                    override fun onAdLoaded(ad: RewardedInterstitialAd) {
-                        if (activity == null) { doShareDiffPdf(startDate, endDate); return }
-
-                        var rewardEarned = false
-                        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                            override fun onAdDismissedFullScreenContent() {
-                                if (!rewardEarned) isGeneratingReport = false
-                            }
-                            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                                doShareDiffPdf(startDate, endDate)
-                            }
-                        }
-                        ad.show(activity) { _ ->
-                            rewardEarned = true
-                            doShareDiffPdf(startDate, endDate)
-                        }
-                    }
-
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        doShareDiffPdf(startDate, endDate)
-                    }
-                }
+            rewardedAd.show(
+                onReward    = { doShareDiffPdf(startMillis, endMillis) },
+                onCancelled = { isGeneratingReport = false },
             )
         }
     }
@@ -274,12 +213,7 @@ fun ProfileScreen(
             DateRangeReportDialog(
                 username  = currentUser.username,
                 onDismiss = { showDateRangeDialog = false },
-                onGenerate = { startMillis, endMillis ->
-                    generateAndShareDiffReport(
-                        Instant.ofEpochMilli(startMillis).atZone(ZoneOffset.UTC).toLocalDate(),
-                        Instant.ofEpochMilli(endMillis).atZone(ZoneOffset.UTC).toLocalDate(),
-                    )
-                }
+                onGenerate = generateAndShareDiffReport,
             )
         }
     }
