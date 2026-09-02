@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.multiplatform)
 }
 
 kotlin {
@@ -37,9 +38,11 @@ kotlin {
     sourceSets {
         // ---- commonMain: shared multiplatform code ----
         commonMain.dependencies {
-            // Compose runtime (multiplataforma): el plugin del compilador Compose se
-            // aplica a todos los targets; iOS necesita el runtime en el classpath.
-            implementation(libs.compose.runtime)
+            // Compose Multiplatform (plugin org.jetbrains.compose). Todavía sin UI
+            // compartida; se prepara el classpath para mover ui/** en C2.
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
             // Coroutines — el artefacto -core es multiplataforma
             implementation(libs.kotlinx.coroutines.core)
             // Serialization — ya es KMP
