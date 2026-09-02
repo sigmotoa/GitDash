@@ -60,6 +60,9 @@ kotlin {
             // AndroidX Lifecycle — multiplataforma desde 2.8
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            // Markdown — renderer multiplataforma (antes Markwon, Android/TextView)
+            implementation(libs.markdown.renderer.m3)
+            implementation(libs.markdown.renderer.coil3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -92,15 +95,6 @@ kotlin {
                 // Coil (UI en Compose Android por ahora); engine de red vía Ktor
                 implementation(libs.coil.compose)
                 implementation(libs.coil.network.ktor3)
-
-                // Markwon – Markdown renderer
-                implementation(libs.markwon.core)
-                implementation(libs.markwon.ext.strikethrough)
-                implementation(libs.markwon.ext.tables)
-                implementation(libs.markwon.html)
-                implementation(libs.markwon.image)
-                implementation(libs.markwon.linkify)
-                implementation(libs.androidsvg)
             }
         }
 
