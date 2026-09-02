@@ -75,11 +75,6 @@ kotlin {
 
         // ---- androidMain: Android-only code and dependencies ----
         androidMain {
-            // TEMPORARY: existing Android sources still live under src/main/java.
-            // Move them to src/androidMain/kotlin in the next migration step and
-            // remove this line.
-            kotlin.srcDir("src/main/java")
-
             dependencies {
                 implementation("com.google.android.gms:play-services-ads:24.7.0")
                 implementation(libs.androidx.core.ktx)
