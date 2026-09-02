@@ -32,6 +32,7 @@ import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
 import com.sigmotoa.gitdash.ui.components.PieChart
 import com.sigmotoa.gitdash.ui.components.PieChartData
 import com.sigmotoa.gitdash.ui.utils.LanguageColors
+import com.sigmotoa.gitdash.ui.utils.oneDecimal
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlin.math.min
 
@@ -387,7 +388,7 @@ private fun LanguageBarWithPercentage(
         // Percentage and count
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = String.format("%.1f%%", percentage),
+                text = "${percentage.oneDecimal()}%",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = color

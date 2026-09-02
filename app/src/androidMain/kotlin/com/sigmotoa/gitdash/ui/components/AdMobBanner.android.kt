@@ -10,9 +10,7 @@ import com.google.android.gms.ads.AdView
 import com.sigmotoa.gitdash.BuildConfig
 
 @Composable
-fun AdMobBanner(
-    modifier: Modifier = Modifier
-) {
+actual fun AdMobBanner(modifier: Modifier) {
     AndroidView(
         modifier = modifier.fillMaxWidth(),
         factory = { context ->

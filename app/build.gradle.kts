@@ -43,6 +43,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.animation)
             // Coroutines — el artefacto -core es multiplataforma
@@ -56,8 +57,9 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
-            // AndroidX Lifecycle ViewModel — multiplataforma desde 2.8
+            // AndroidX Lifecycle — multiplataforma desde 2.8
             implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.runtime.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -80,11 +82,6 @@ kotlin {
                 implementation(libs.androidx.ui.graphics)
                 implementation(libs.androidx.ui.tooling.preview)
                 implementation(libs.androidx.material3)
-
-                implementation("androidx.compose.material:material-icons-extended:1.7.8")
-
-                // ViewModel
-                implementation(libs.androidx.lifecycle.viewmodel.compose)
 
                 // Navigation
                 implementation(libs.androidx.navigation.compose)
