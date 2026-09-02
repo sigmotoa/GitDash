@@ -64,25 +64,35 @@ private final class GmaRewardedController: NSObject, RewardedAdController, GADFu
         ) { [weak self] ad, error in
             guard let self else { return }
             guard let ad, error == nil, let vc = currentRootVC else {
-                self.onReward?(); self.clear(); return
+                // Sin anuncio disponible: concede la recompensa igualmente.
+                self.finish(rewarded: true)
+                return
             }
             self.ad = ad
             ad.fullScreenContentDelegate = self
             ad.present(fromRootViewController: vc) { [weak self] in
                 self?.rewardEarned = true
-                self?.onReward?()
             }
         }
     }
 
+    // La acción premiada se ejecuta DESPUÉS de cerrar el anuncio, no mientras se
+    // muestra (si no, el share sheet se presentaría sobre el anuncio).
     func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
-        if !rewardEarned { onCancelled?() }
-        clear()
+        finish(rewarded: rewardEarned)
     }
 
     func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        onReward?()
+        finish(rewarded: true)
+    }
+
+    private func finish(rewarded: Bool) {
+        let reward = onReward
+        let cancel = onCancelled
         clear()
+        DispatchQueue.main.async {
+            if rewarded { reward?() } else { cancel?() }
+        }
     }
 
     private func clear() {

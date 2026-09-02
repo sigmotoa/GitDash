@@ -25,7 +25,6 @@ import com.sigmotoa.gitdash.data.repository.RawEventRecord
 import com.sigmotoa.gitdash.ui.components.AdMobBanner
 import com.sigmotoa.gitdash.ui.components.ContributionGraph
 import com.sigmotoa.gitdash.ui.components.GitHubSearchBar
-import com.sigmotoa.gitdash.ui.platform.ioDispatcher
 import com.sigmotoa.gitdash.ui.platform.rememberFileSharer
 import com.sigmotoa.gitdash.ui.platform.rememberRewardedAdController
 import com.sigmotoa.gitdash.ui.platform.sharePdf
@@ -33,7 +32,6 @@ import com.sigmotoa.gitdash.ui.report.ReportGenerator
 import com.sigmotoa.gitdash.ui.viewmodel.GitHubViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -102,16 +100,16 @@ fun ProfileScreen(
         if (currentUser != null) {
             scope.launch(Dispatchers.Main) {
                 try {
-                    val pdf = withContext(ioDispatcher) {
-                        ReportGenerator.profileReport(
-                            user             = currentUser,
-                            repos            = uiState.unifiedRepos,
-                            categoryCounts   = categoryCounts,
-                            dateMap          = contributionMap,
-                            topReposByPushes = topReposByPushes,
-                            lastCommitInfo   = lastCommitInfo
-                        )
-                    }
+                    // El renderer de PDF de iOS usa UIKit y debe correr en el hilo
+                    // principal; la descarga del avatar es suspend y no bloquea.
+                    val pdf = ReportGenerator.profileReport(
+                        user             = currentUser,
+                        repos            = uiState.unifiedRepos,
+                        categoryCounts   = categoryCounts,
+                        dateMap          = contributionMap,
+                        topReposByPushes = topReposByPushes,
+                        lastCommitInfo   = lastCommitInfo
+                    )
                     fileSharer.sharePdf(pdf, "GitDash-Profile-${currentUser.username}.pdf")
                 } finally {
                     isGeneratingReport = false
@@ -156,26 +154,22 @@ fun ProfileScreen(
                         .map { it.key }
                         .filter { it.isNotEmpty() }
 
-                    val linesAdded = withContext(ioDispatcher) {
-                        viewModel.getLinesAddedInRange(
-                            currentUser.username,
-                            reposInRange,
-                            startMillis / 1000,
-                            endMillis / 1000 + 86_400,   // end date + 1 day (exclusive)
-                            currentUser.platform
-                        )
-                    }
+                    val linesAdded = viewModel.getLinesAddedInRange(
+                        currentUser.username,
+                        reposInRange,
+                        startMillis / 1000,
+                        endMillis / 1000 + 86_400,   // end date + 1 day (exclusive)
+                        currentUser.platform
+                    )
 
-                    val pdf = withContext(ioDispatcher) {
-                        ReportGenerator.diffReport(
-                            user          = currentUser,
-                            repos         = uiState.unifiedRepos,
-                            rawPushEvents = rawPushEvents,
-                            startDateIso  = startIso,
-                            endDateIso    = endIso,
-                            linesAdded    = linesAdded
-                        )
-                    }
+                    val pdf = ReportGenerator.diffReport(
+                        user          = currentUser,
+                        repos         = uiState.unifiedRepos,
+                        rawPushEvents = rawPushEvents,
+                        startDateIso  = startIso,
+                        endDateIso    = endIso,
+                        linesAdded    = linesAdded
+                    )
                     fileSharer.sharePdf(
                         pdf,
                         "GitDash-Activity-${currentUser.username}-${startIso}_$endIso.pdf",

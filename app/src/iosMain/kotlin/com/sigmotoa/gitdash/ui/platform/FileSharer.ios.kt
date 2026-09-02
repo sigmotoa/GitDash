@@ -14,7 +14,7 @@ import platform.Foundation.create
 import platform.Foundation.stringByAppendingPathComponent
 import platform.Foundation.writeToURL
 import platform.UIKit.UIActivityViewController
-import platform.UIKit.UIApplication
+import platform.UIKit.popoverPresentationController
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -28,11 +28,13 @@ actual fun rememberFileSharer(): FileSharer = remember {
         }
         data.writeToURL(url, atomically = true)
 
+        val presenter = topmostViewController() ?: return@FileSharer
         val activityController = UIActivityViewController(
             activityItems = listOf(url),
             applicationActivities = null,
         )
-        UIApplication.sharedApplication.keyWindow?.rootViewController
-            ?.presentViewController(activityController, animated = true, completion = null)
+        // En iPad el share sheet es un popover y necesita un origen.
+        activityController.popoverPresentationController?.sourceView = presenter.view
+        presenter.presentViewController(activityController, animated = true, completion = null)
     }
 }
