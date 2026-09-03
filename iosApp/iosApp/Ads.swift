@@ -9,6 +9,10 @@ private enum AdUnits {
     static let rewardedInterstitial = "ca-app-pub-3940256099942544/3980089055"
 }
 
+// Pon a `false` para saltarte el anuncio recompensado y conceder la recompensa
+// (generación del PDF) directamente. Útil para depurar el flujo de informes.
+private let rewardedAdEnabled = true
+
 private func requestTrackingWhenReady() {
     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
         if #available(iOS 14, *) {
@@ -40,9 +44,12 @@ func installAds() {
         return view
     }
 
-    IosAdBridge.shared.rewardedFactory = {
-        GmaRewardedController()
+    if rewardedAdEnabled {
+        IosAdBridge.shared.rewardedFactory = {
+            GmaRewardedController()
+        }
     }
+    // Si queda a nil, el `actual` de iOS concede la recompensa sin mostrar anuncio.
 }
 
 /// Carga y muestra un anuncio recompensado; si algo falla, concede la recompensa
