@@ -3,10 +3,25 @@ import AppTrackingTransparency
 import GoogleMobileAds
 import GitDashKit
 
-// IDs de AdMob para iOS. (El App ID va en Info.plist como GADApplicationIdentifier.)
+// IDs de AdMob. Se leen del Info.plist, que los recibe de Configuration/*.xcconfig
+// (los reales van en Secrets.xcconfig, gitignored). Si no hay, se usan los IDs de
+// PRUEBA públicos de Google. El App ID va como GADApplicationIdentifier.
 private enum AdUnits {
-    static let banner = "ca-app-pub-3940256099942544/2501205051"
-    static let rewardedInterstitial = "ca-app-pub-3940256099942544/3980089055"
+    private static func infoPlist(_ key: String) -> String? {
+        (Bundle.main.object(forInfoDictionaryKey: key) as? String)?
+            .trimmingCharacters(in: .whitespaces)
+            .nilIfEmpty
+    }
+    static var banner: String {
+        infoPlist("GADBannerUnitID") ?? "ca-app-pub-3940256099942544/2934735716"
+    }
+    static var rewardedInterstitial: String {
+        infoPlist("GADRewardedUnitID") ?? "ca-app-pub-3940256099942544/6978759866"
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 // Pon a `false` para saltarte el anuncio recompensado y conceder la recompensa

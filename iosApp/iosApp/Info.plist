@@ -21,7 +21,11 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~7964933073</string>
+	<string>$(GAD_APP_ID)</string>
+	<key>GADBannerUnitID</key>
+	<string>$(GAD_BANNER_UNIT_ID)</string>
+	<key>GADRewardedUnitID</key>
+	<string>$(GAD_REWARDED_UNIT_ID)</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Se usa para mostrarte anuncios más relevantes.</string>
 	<!-- Lista recomendada por Google para AdMob (mediación incluida). Revisar

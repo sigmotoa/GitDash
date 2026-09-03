@@ -2,3 +2,14 @@
 TEAM_ID=
 BUNDLE_ID=com.sigmotoa.gitdash
 APP_NAME=GitDash
+
+// ── AdMob ────────────────────────────────────────────────────────────────────
+// Estos son los IDs de PRUEBA públicos de Google (seguros para el repo).
+// Los IDs reales van en Secrets.xcconfig (gitignored) — copia
+// Secrets.xcconfig.example y rellénalo. El include va AL FINAL para que
+// Secrets.xcconfig sobrescriba estos valores por defecto.
+GAD_APP_ID = ca-app-pub-3940256099942544~1458002511
+GAD_BANNER_UNIT_ID = ca-app-pub-3940256099942544/2934735716
+GAD_REWARDED_UNIT_ID = ca-app-pub-3940256099942544/6978759866
+
+#include? "Secrets.xcconfig"

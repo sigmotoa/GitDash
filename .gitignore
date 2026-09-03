@@ -24,3 +24,4 @@ xcuserdata/
 /iosApp/build/
 /iosApp/Pods/
 /iosApp/*.xcworkspace/xcshareddata/swiftpm/
+/iosApp/Configuration/Secrets.xcconfig
