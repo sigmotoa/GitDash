@@ -10,6 +10,7 @@
 		1A1A1A1A1A1A1A1A1A1A1A13 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A0E /* iOSApp.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A0F /* ContentView.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */; };
+		1A1A1A1A1A1A1A1A1A1A1A27 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A26 /* PrivacyInfo.xcprivacy */; };
 		1A1A1A1A1A1A1A1A1A1A1A21 /* Ads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A1A1A1A1A1A1A1A1A20 /* Ads.swift */; };
 		1A1A1A1A1A1A1A1A1A1A1A23 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 1A1A1A1A1A1A1A1A1A1A1A25 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
@@ -21,6 +22,7 @@
 		1A1A1A1A1A1A1A1A1A1A1A0F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A11 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A1A1A1A1A1A1A1A1A1A1A26 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1A1A1A1A1A1A1A1A1A1A1A12 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -53,6 +55,7 @@
 				1A1A1A1A1A1A1A1A1A1A1A20 /* Ads.swift */,
 				1A1A1A1A1A1A1A1A1A1A1A10 /* Assets.xcassets */,
 				1A1A1A1A1A1A1A1A1A1A1A11 /* Info.plist */,
+				1A1A1A1A1A1A1A1A1A1A1A26 /* PrivacyInfo.xcprivacy */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -139,6 +142,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A1A1A1A1A1A1A1A1A1A1A15 /* Assets.xcassets in Resources */,
+				1A1A1A1A1A1A1A1A1A1A1A27 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
