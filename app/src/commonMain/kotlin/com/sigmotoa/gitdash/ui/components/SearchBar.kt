@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.sigmotoa.gitdash.data.model.Platform
@@ -23,6 +25,9 @@ fun GitHubSearchBar(
     onPlatformChange: (Platform) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -112,6 +117,8 @@ fun GitHubSearchBar(
                             if (query.isNotBlank()) {
                                 onSearch(query)
                             }
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
                         }
                     )
                 )
@@ -121,6 +128,8 @@ fun GitHubSearchBar(
                         if (query.isNotBlank()) {
                             onSearch(query)
                         }
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
                     },
                     enabled = query.isNotBlank(),
                     modifier = Modifier.height(56.dp)
