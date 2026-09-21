@@ -10,10 +10,28 @@ import com.sigmotoa.gitdash.data.model.UnifiedUser
 import com.sigmotoa.gitdash.data.repository.ContributionData
 import com.sigmotoa.gitdash.data.repository.GitHubRepository
 import com.sigmotoa.gitdash.data.repository.UnifiedRepository
+import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+/**
+ * Traduce excepciones de red/HTTP a mensajes legibles. Sin esto, un error de
+ * la API (ej. límite de rate-limit sin autenticación, o un usuario que no
+ * existe) se mostraba como el texto crudo de la excepción de Ktor.
+ */
+private fun friendlyErrorMessage(exception: Throwable): String {
+    val status = (exception as? ResponseException)?.response?.status
+    return when (status) {
+        HttpStatusCode.NotFound -> "User not found. Check the username and try again."
+        HttpStatusCode.Forbidden, HttpStatusCode.TooManyRequests ->
+            "Too many requests right now — please wait a moment and try again."
+        null -> "Couldn't connect. Check your internet connection and try again."
+        else -> "Something went wrong. Please try again."
+    }
+}
 
 data class GitHubUiState(
     val user: GitHubUser? = null,
@@ -63,7 +81,7 @@ class GitHubViewModel(
                 },
                 onFailure = { exception ->
                     _uiState.value = _uiState.value.copy(
-                        error = exception.message ?: "Unknown error",
+                        error = friendlyErrorMessage(exception),
                         isLoading = false
                     )
                 }
@@ -79,7 +97,7 @@ class GitHubViewModel(
                 },
                 onFailure = { exception ->
                     _uiState.value = _uiState.value.copy(
-                        error = exception.message ?: "Failed to load repos"
+                        error = friendlyErrorMessage(exception)
                     )
                 }
             )
